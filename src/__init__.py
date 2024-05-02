@@ -1,28 +1,43 @@
-"""Package docstring."""
+""""Package docstring."""
 
 import logging
-from src import constants as C
 
-def setup_logger(name):
-    """Start a separate logger for each script."""
 
-    formatter = logging.Formatter(
-        fmt="[%(asctime)s] %(levelname)s %(funcName)s() %(message)s", 
-        datefmt='%d-%b-%y %H:%M:%S',
-        )
+_FORMATTER = logging.Formatter(
+    fmt="[%(asctime)s] %(levelname)s %(filename)s %(funcName)s(): %(message)s",
+    datefmt="%d-%b-%y %H:%M:%S",
+)
 
-    file_handler = logging.FileHandler(f"{C.LOGS_DIR}/{name}.log", "w")
-    file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(formatter)        
-    
-    stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(logging.INFO)
-    stream_handler.setFormatter(formatter)
+
+def setup_logger(
+    logfile=None,
+    mode="w",
+    name="src",
+    formatter=_FORMATTER,
+    stream=False,
+    level=logging.DEBUG,
+):
+    """Retrieve a new or existing logger and optionally add handler(s) to it."""
 
     logger = logging.getLogger(name)
-    if logger.hasHandlers(): logger.handlers.clear()
     logger.setLevel(logging.DEBUG)
-    logger.addHandler(stream_handler)
-    logger.addHandler(file_handler)
+
+    # Log to file
+    if logfile:
+        file_handler = logging.FileHandler(logfile, mode=mode)
+        file_handler.setFormatter(formatter)
+        file_handler.setLevel(level)
+        logger.addHandler(file_handler)
+
+    # Log to console
+    if stream:
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        stream_handler.setLevel(level)
+        logger.addHandler(stream_handler)
 
     return logger
+
+
+root_logger = setup_logger(name="") # Sponge for logging output from external packages
+src_logger = setup_logger(stream=True) # Main logger for the package
