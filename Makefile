@@ -2,7 +2,10 @@ SHELL = bash
 
 .ONESHELL :
 
-.PHONY : all
+.PHONY : all recurrent_dnms
+
+recurrent_dnms :
+	make -f src/recurrent_dnms/Makefile all
 
 all : data/interim/variants_37_kaplanis_dnms.vcf \
       data/interim/liftover_38_ddd.vcf \
@@ -21,6 +24,8 @@ all : data/interim/variants_37_kaplanis_dnms.vcf \
 	  data/interim/dnms_annotated.tsv \
 	  data/interim/dnms_annotated_clinical.tsv \
 	  data/statistics/case_solved_odds_ratios.tsv \
+
+
 
 # Convert Kaplanis DNMs to VCF
 data/interim/variants_37_kaplanis_dnms.vcf : src/data/ddd_dnms_to_vcf.py
