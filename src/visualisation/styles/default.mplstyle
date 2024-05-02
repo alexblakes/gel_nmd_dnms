@@ -1,0 +1,76 @@
+## Default style sheet for scientific plotting
+## Adapted from the base style sheet for "SciencePlots" 
+## at https://github.com/garrettj403/SciencePlots
+
+## For further options, see the documentation on the matplotlibrc file at
+## https://matplotlib.org/stable/tutorials/introductory/customizing.html#customizing-with-matplotlibrc-files
+
+# Set default figure size
+# 89mm (single column), 120mm (medium), 180mm (double column)
+# 3.5" (single column), 4.72" (medium), 7.09" (double column)
+# To convert mm to inches, divide by 25.4
+figure.figsize : 3.5, 3
+##figure.dpi : 350
+
+# Set x axis
+xtick.direction : out
+xtick.major.size : 3
+xtick.major.width : 0.5
+xtick.minor.size : 1.5
+xtick.minor.width : 0.5
+xtick.minor.visible : False
+xtick.top : False
+
+# Set y axis
+ytick.direction : out
+ytick.major.size : 3
+ytick.major.width : 0.5
+ytick.minor.size : 1.5
+ytick.minor.width : 0.5
+ytick.minor.visible : False
+ytick.right : False
+
+# Axes properties
+axes.spines.top : False
+axes.spines.right : False
+
+# Lines and markers
+axes.linewidth : 0.5
+grid.linewidth : 0.5
+lines.linewidth : 1
+lines.markersize : 3
+lines.markeredgewidth : 0 # Remove marker edge
+
+# Legend
+legend.frameon : False
+legend.borderpad : 0
+legend.labelspacing : 0.2
+legend.handlelength : 1
+legend.handletextpad : 0.5
+legend.labelcolor: linecolor
+
+# Always save as 'tight'
+savefig.bbox : tight
+savefig.pad_inches : 0.01  # Use virtually all space when we specify figure dimensions
+
+# Font sizes
+font.size: 7
+axes.titlesize: medium
+axes.labelsize: medium
+xtick.labelsize: medium
+ytick.labelsize: medium
+legend.fontsize: 7
+
+# Label padding
+axes.titlepad : 2
+axes.labelpad : 2
+xtick.major.pad : 1
+xtick.minor.pad : 1
+ytick.major.pad : 1
+ytick.minor.pad : 1
+
+# Font Family
+font.family: sans-serif
+font.sans-serif: DejaVu Sans, Arial, Helvetica, Lucida Grande, Verdana, Geneva, Lucid, Avant Garde, sans-serif
+mathtext.fontset : dejavusans
+

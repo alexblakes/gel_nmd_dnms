@@ -1,0 +1,5 @@
+# Set color cycle: blue, teal, orange, red, light_blue, magenta, grey, black
+# Adapted from the "vibrant" scheme from Paul Tot's website: https://personal.sron.nl/~pault/
+# Colorblind safe
+
+axes.prop_cycle : cycler('color', ["0077BB", "009988", "EE7733", "CC3311", "33BBEE", "EE3377", "BBBBBB", "000000",])

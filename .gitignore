@@ -1,0 +1,7 @@
+.ipynb_checkpoints
+.vscode
+manual_review/*
+.virtual_documents
+scratch/*
+__pycache__
+

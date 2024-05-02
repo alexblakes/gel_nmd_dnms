@@ -1,0 +1,4 @@
+# Set color cycle: transcript, nmd target, start proximal, long exon, distal
+# Adapted from the "Sunset" divergent color scheme from Paul Tot's website: https://personal.sron.nl/~pault/
+# Colorblind safe
+axes.prop_cycle : cycler('color', ["BBBBBB", "B2182B", "98CAE1", "4A7BB7", "293C83"])
