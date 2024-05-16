@@ -1,4 +1,4 @@
-"""Module docstring."""
+"""Plot the number of transcripts with recurrent dnPTVs per region."""
 
 import logging
 from pathlib import Path
@@ -39,7 +39,12 @@ def read_dnm_ptvs(path):
     ).query("csq == 'frameshift_variant' | csq == 'stop_gained'")
 
 
-def count_dnms_per_region(df, name):
+def count_dnms_per_region(df, name, clip=5):
+    """Calculate the number of dnPTVs per region per transcript.
+    
+    For each transcript, we only consider the region with the highest number of dnPTVs.
+    """
+
     counts = (
         df.groupby(["enst", "region"])["chr"]
         .count()
@@ -49,7 +54,7 @@ def count_dnms_per_region(df, name):
         .reset_index()
         .set_axis(["n", "count"], axis=1)
     )
-    counts["n"] = counts["n"].clip(upper=5)
+    counts["n"] = counts["n"].clip(upper=clip)
     counts = counts.groupby("n")["count"].sum().rename(name)
 
     return counts
