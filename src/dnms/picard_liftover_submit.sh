@@ -7,8 +7,6 @@ bsub \
 -J "liftover" \
 -o data/logs/%J_liftover_out \
 -e data/logs/%J_liftover_err \
--R "rusage[mem=64000]" \
--M 64000 \
 bash src/process_dnms/picard_liftover.sh $1 $2
 
 bwait -w "done(liftover)"

@@ -1,15 +1,24 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # Liftover GRCh37 VCF to GRCh38 VCF with Picard
 
+JAR_FILE="/tools/aws-workspace-apps/re_admin/source_code/picard/3.1.1/picard.jar"
+CHAIN="data/raw/grch37_to_grch38.over.chain"
+BASENAME=$(basename $1)
+FASTA="/public_data_resources/reference/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna"
+
 # Load module
-module load bio/picard/2.18.27-Java-1.8
+module load picard/3.1.1
 
 # Picard command
-java -jar $EBROOTPICARD/picard.jar \
+java -jar $JAR_FILE \
 LiftoverVcf \
-I="data/interim/${1}" \
-O="data/interim/${2}" \
-CHAIN=data/raw/grch37_to_grch38.over.chain \
-REJECT=data/logs/picard_liftover_rejected_$1 \
-REFERENCE_SEQUENCE=/public_data_resources/reference/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna \
+I=$1 \
+O=$2 \
+CHAIN=$CHAIN \
+REJECT="data/logs/picard_liftover_rejected_${BASENAME}" \
+REFERENCE_SEQUENCE=$FASTA \
 WARN_ON_MISSING_CONTIG=true
+
+# Compress and index
+bgzip -kf $2 && tabix -f "${2}.gz"

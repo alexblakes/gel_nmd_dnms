@@ -2,12 +2,12 @@
 .PHONY : all
 
 SHELL = bash
-CONDA_ACTIVATE = source $$(conda info --base)/etc/profile.d/conda.sh ; conda activate ; conda activate
+CONDA_ACTIVATE := source $$(conda info --base)/etc/profile.d/conda.sh ; conda activate ; conda activate
 
 gel_vcfs = data/interim/dnms_37_gel.vcf \
            data/interim/dnms_38_gel_raw.vcf \
            data/interim/dnms_38_gel_raw.vcf.gz \
-           data/interim/dnms_38_gel_raw.vcf.tbi \
+           data/interim/dnms_38_gel_raw.vcf.gz.tbi \
 
 liftover = data/interim/dnms_38_kaplanis.vcf \
            data/interim/dnms_38_kaplanis.vcf.gz \
@@ -29,9 +29,9 @@ all : data/interim/kaplanis_dnms_filled.tsv \
 
 data/interim/kaplanis_dnms_filled.tsv : data/raw/kaplanis_dnms.tsv \
                                         src/dnms/tidy_kaplanis_dnms.py
-      source activate dnms
+	source activate dnms
 	python3 -m src.dnms.tidy_kaplanis_dnms
-      source activate ukb
+	source activate ukb
 
 data/interim/dnms_37_kaplanis.vcf : data/interim/kaplanis_dnms_filled.tsv \
                                     src/dnms/dnms_to_vcf_ddd.sh
@@ -40,24 +40,24 @@ data/interim/dnms_37_kaplanis.vcf : data/interim/kaplanis_dnms_filled.tsv \
 	bash src/dnms/dnms_to_vcf_ddd.sh data/interim/kaplanis_dnms_filled.tsv data/interim/dnms_37_kaplanis.vcf
 	$(CONDA_ACTIVATE) dnms
     
-$(gel_vcfs) : data/raw/denovo_flagged_variants_2023-05-16_09-51-50.tsv \
+$(gel_vcfs) &: data/raw/denovo_flagged_variants_2023-05-16_09-51-50.tsv \
               src/dnms/dnms_to_vcf_gel.sh
 	$(CONDA_ACTIVATE) bio
 	bash src/dnms/dnms_to_vcf_gel.sh
 	$(CONDA_ACTIVATE) dnms
 
-$(liftover) : data/interim/dnms_37_kaplanis.vcf \
+$(liftover) &: data/interim/dnms_37_kaplanis.vcf \
               data/interim/dnms_37_gel.vcf \
               src/dnms/picard_liftover.sh \
               src/dnms/picard_liftover_submit.sh
-	$(CONDA_ACTIVATE) bio
-	bash src/dnms/picard_liftover_submit.sh dnms_37_kaplanis.vcf dnms_38_kaplanis.vcf
-	bash src/dnms/picard_liftover_submit.sh dnms_37_gel.vcf dnms_38_gel_lifted.vcf
-	$(CONDA_ACTIVATE) dnms
+	source activate bio
+	bash src/dnms/picard_liftover.sh data/interim/dnms_37_kaplanis.vcf data/interim/dnms_38_kaplanis.vcf
+	bash src/dnms/picard_liftover.sh data/interim/dnms_37_gel.vcf data/interim/dnms_38_gel_lifted.vcf
+	source activate dnms
     
-$(gel_combined) : $(gel_vcfs) \
+$(gel_combined) &: $(gel_vcfs) \
                   $(liftover) \
                   src/dnms/dnms_combine_gel.sh
-	$(CONDA_ACTIVATE) bio
+	source activate bio
 	bash src/dnms/dnms_combine_gel.sh
-	$(CONDA_ACTIVATE) dnms
+	source activate dnms
