@@ -4,9 +4,9 @@ channels:
   - /conda-main
   - /conda-virtual
   - /conda-conda-forge
-  - conda-virtual
   - conda-conda-forge
   - conda-bioconda
+  - conda-virtual
   - conda-main
 dependencies:
   - _libgcc_mutex=0.1

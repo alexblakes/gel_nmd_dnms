@@ -29,7 +29,9 @@ all : data/interim/kaplanis_dnms_filled.tsv \
 
 data/interim/kaplanis_dnms_filled.tsv : data/raw/kaplanis_dnms.tsv \
                                         src/dnms/tidy_kaplanis_dnms.py
+      source activate dnms
 	python3 -m src.dnms.tidy_kaplanis_dnms
+      source activate ukb
 
 data/interim/dnms_37_kaplanis.vcf : data/interim/kaplanis_dnms_filled.tsv \
                                     src/dnms/dnms_to_vcf_ddd.sh
