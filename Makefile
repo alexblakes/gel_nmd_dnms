@@ -26,7 +26,8 @@ all : dnms \
       annotate_dnms \
 	  labkey \
 	  merge_annotations \
-	  recurrent_dnms \
+	  stats_recurrent_dnms \
+	  stats_enrichment \
 	  data/statistics/case_solved_odds_ratios.tsv \
 
 # Get case solved odds ratios
