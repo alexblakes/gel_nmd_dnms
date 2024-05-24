@@ -2,30 +2,23 @@
 .PHONY : all
 
 SHELL = bash
-CONDA_ACTIVATE := source $$(conda info --base)/etc/profile.d/conda.sh ; conda activate ; conda activate
 
-gel_vcfs = data/interim/dnms_37_gel.vcf \
-           data/interim/dnms_38_gel_raw.vcf \
+gel_vcfs = data/interim/dnms_37_gel.vcf.gz \
            data/interim/dnms_38_gel_raw.vcf.gz \
-           data/interim/dnms_38_gel_raw.vcf.gz.tbi \
 
-liftover = data/interim/dnms_38_kaplanis.vcf \
-           data/interim/dnms_38_kaplanis.vcf.gz \
-           data/interim/dnms_38_kaplanis.vcf.gz.tbi \
-           data/interim/dnms_38_gel_lifted.vcf \
+liftover = data/interim/dnms_38_kaplanis.vcf.gz \
            data/interim/dnms_38_gel_lifted.vcf.gz \
-           data/interim/dnms_38_gel_lifted.vcf.gz.tbi \
 
-gel_combined = data/interim/dnms_38_gel_combined.vcf \
-               data/interim/dnms_38_gel_combined.vcf.gz \
-               data/interim/dnms_38_gel_combined.vcf.gz.tbi \
+allele_frequencies = data/interim/allele_frequencies_gnomad_v3.1.1_genomes.vcf.gz \
+                     data/interim/allele_frequencies_gel.txt.gz \
 
 all : data/interim/kaplanis_dnms_filled.tsv \
-      data/interim/dnms_37_kaplanis.vcf \
+      data/interim/dnms_37_kaplanis.vcf.gz \
       $(gel_vcfs) \
       $(liftover) \
-      $(gel_combined) \
-
+      data/interim/dnms_38_combined.vcf.gz \
+      $(allele_frequencies) \
+      data/interim/dnms_38_combined_af.tsv.gz \
 
 data/interim/kaplanis_dnms_filled.tsv : data/raw/kaplanis_dnms.tsv \
                                         src/dnms/tidy_kaplanis_dnms.py
@@ -33,31 +26,30 @@ data/interim/kaplanis_dnms_filled.tsv : data/raw/kaplanis_dnms.tsv \
 	python3 -m src.dnms.tidy_kaplanis_dnms
 	source activate ukb
 
-data/interim/dnms_37_kaplanis.vcf : data/interim/kaplanis_dnms_filled.tsv \
+data/interim/dnms_37_kaplanis.vcf.gz : data/interim/kaplanis_dnms_filled.tsv \
                                     src/dnms/dnms_to_vcf_ddd.sh
 	# Converting Kaplanis DNMs to VCF
-	$(CONDA_ACTIVATE) bio
-	bash src/dnms/dnms_to_vcf_ddd.sh data/interim/kaplanis_dnms_filled.tsv data/interim/dnms_37_kaplanis.vcf
-	$(CONDA_ACTIVATE) dnms
+	source activate bio
+	bash src/dnms/dnms_to_vcf_ddd.sh
+	source activate ukb
     
 $(gel_vcfs) &: data/raw/denovo_flagged_variants_2023-05-16_09-51-50.tsv \
               src/dnms/dnms_to_vcf_gel.sh
-	$(CONDA_ACTIVATE) bio
+	source activate bio
 	bash src/dnms/dnms_to_vcf_gel.sh
-	$(CONDA_ACTIVATE) dnms
+	source activate ukb
 
-$(liftover) &: data/interim/dnms_37_kaplanis.vcf \
-              data/interim/dnms_37_gel.vcf \
-              src/dnms/picard_liftover.sh \
-              src/dnms/picard_liftover_submit.sh
+$(liftover) &: data/interim/dnms_37_kaplanis.vcf.gz \
+               data/interim/dnms_37_gel.vcf.gz \
+               src/dnms/picard_liftover.sh
 	source activate bio
-	bash src/dnms/picard_liftover.sh data/interim/dnms_37_kaplanis.vcf data/interim/dnms_38_kaplanis.vcf
-	bash src/dnms/picard_liftover.sh data/interim/dnms_37_gel.vcf data/interim/dnms_38_gel_lifted.vcf
-	source activate dnms
-    
-$(gel_combined) &: $(gel_vcfs) \
-                  $(liftover) \
-                  src/dnms/dnms_combine_gel.sh
+	bash src/dnms/picard_liftover.sh data/interim/dnms_37_kaplanis.vcf.gz data/interim/dnms_38_kaplanis.vcf.gz
+	bash src/dnms/picard_liftover.sh data/interim/dnms_37_gel.vcf.gz data/interim/dnms_38_gel_lifted.vcf.gz
+	source activate ukb
+
+data/interim/dnms_38_combined.vcf.gz : $(gel_vcfs) \
+                                       $(liftover) \
+                                       src/dnms/combine_dnms.sh
 	source activate bio
-	bash src/dnms/dnms_combine_gel.sh
-	source activate dnms
+	bash src/dnms/combine_dnms.sh
+	source activate ukb
