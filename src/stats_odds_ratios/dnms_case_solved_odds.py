@@ -1,11 +1,20 @@
-"""Case solved odds ratios."""
+"""Case solved odds ratio statistics."""
 
-# Imports
+import logging
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 from scipy.stats import contingency
-from src import constants as C
+
+import src
 from src.data import statistics_for_plots
+
+_LOGFILE = f"data/logs/{Path(__file__).stem}.log"
+_FILE_IN = "data/interim/dnms_annotated_clinical.tsv"
+_FILE_OUT = "data/statistics/case_solved_odds_ratios.tsv"
+
+logger = logging.getLogger(__name__)
 
 
 def get_dnms(path):
@@ -23,7 +32,7 @@ def get_dnms(path):
                 "case_solved",
             ],
         )
-        .query("cohort=='gel'")
+        .query("cohort=='GEL'")
         .drop("cohort", axis=1)
         .fillna({"omim_inheritance_simple": ""})
         .assign(
@@ -71,7 +80,7 @@ def get_odds_ratio(df, conditions, region, constraint):
 
 
 def main():
-    df = get_dnms(C.DNMS_ANNOTATED_CLINICAL)
+    df = get_dnms(_FILE_IN)
 
     # Masks
     ## Consequences
@@ -114,12 +123,11 @@ def main():
     )
 
     # Write to output
-    or_stats.to_csv(
-        "data/statistics/case_solved_odds_ratios.tsv", sep="\t", index=False
-    )
+    or_stats.to_csv(_FILE_OUT, sep="\t", index=False)
 
     return or_stats  #! Testing
 
 
 if __name__ == "__main__":
+    logger = src.setup_logger(_LOGFILE)
     main()
