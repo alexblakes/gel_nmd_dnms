@@ -9,7 +9,7 @@ import src
 from src.annotate_dnms.dnms_tidy_logging import read_tidy_dnms
 
 _LOGFILE = f"data/logs/{Path(__file__).stem}.log"
-_DNMS_VEP_TIDY = "data/interim/dnms_38_combined_vep_tidy.tsv"
+_DNMS_VEP_TIDY = "data/interim/dnms_38_combined_af_vep_tidy.tsv"
 _REGIONAL_NONSENSE_CONSTRAINT = "data/uom_csf/regional_nonsense_constraint.tsv"
 _NMD_ANNOTATION = "data/uom_csf/nmd_annotations.tsv"
 _GENE_IDS = "data/uom_csf/gene_ids.tsv"

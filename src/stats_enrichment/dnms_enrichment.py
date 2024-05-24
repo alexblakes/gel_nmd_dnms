@@ -2,25 +2,24 @@
 """
 
 # Imports
+import logging
 from pathlib import Path
-import itertools
-from sre_parse import CATEGORIES
 
 import numpy as np
 import pandas as pd
 from scipy.stats import chisquare
 from scipy.stats import poisson
 
-from src import setup_logger
-from src import constants as C
-from src.data import dnms_annotate_constraint
+import src
+from src.merge_annotations import dnms_annotate_constraint
 from src.data.statistics_for_plots import sort_region_column
 
-# Logging
-logger = setup_logger(Path(__file__).stem)
-
-
-# Module constants
+_LOGFILE = f"data/logs/{Path(__file__).stem}.log"
+_DNMS_ANNOTATED = "data/interim/dnms_annotated.tsv"
+_REGIONAL_NONSENSE_CONSTRAINT = "data/uom_csf/regional_nonsense_constraint.tsv"
+_REGIONAL_CONSTRAINT_STATS = "data/uom_csf/regional_constraint_stats.tsv"
+_GENE_IDS = "data/uom_csf/gene_ids.tsv"
+_GENEMAP2_SIMPLE = "data/uom_csf/genemap2_simple.tsv"
 _DNM_ENRICHMENT_CATEGORIES = [
     "synonymous_variant",
     "missense_variant",
@@ -32,7 +31,6 @@ _DNM_ENRICHMENT_CATEGORIES = [
 ][
     ::-1
 ]  # Reversed
-
 _DNM_ENRICHMENT_LABELS = [
     "Synonymous",
     "Missense",
@@ -44,12 +42,12 @@ _DNM_ENRICHMENT_LABELS = [
 ][
     ::-1
 ]  # Reversed
-
 _GENE_SET_NAMES = ["all_genes", "morbid_genes", "non_morbid_genes"]
 _GENE_SET_LABELS = ["All genes", "Morbid genes", "Non-morbid genes"]
 
+logger = logging.getLogger(__name__)
 
-# Functions
+
 def read_dnms(path):
     return pd.read_csv(
         path, sep="\t", usecols=["csq", "constraint", "inheritance_simple", "region"]
@@ -204,12 +202,12 @@ def main():
     """Run as script."""
 
     # Load datasets
-    dnms = read_dnms(C.DNMS_ANNOTATED).pipe(unify_truncating_variants)
-    nonsense_constraint = read_nonsense_constraint(C.REGIONAL_NONSENSE_CONSTRAINT)
-    constraint_stats = read_constraint_stats(C.REGIONAL_CONSTRAINT_STATS).pipe(
+    dnms = read_dnms(_DNMS_ANNOTATED).pipe(unify_truncating_variants)
+    nonsense_constraint = read_nonsense_constraint(_REGIONAL_NONSENSE_CONSTRAINT)
+    constraint_stats = read_constraint_stats(_REGIONAL_CONSTRAINT_STATS).pipe(
         unify_truncating_variants
     )
-    omim = dnms_annotate_constraint.get_omim(C.GENEMAP2_SIMPLE, C.GENE_IDS).drop(
+    omim = dnms_annotate_constraint.get_omim(_GENEMAP2_SIMPLE, _GENE_IDS).drop(
         ["phenotype", "inheritance"], axis=1
     )
 
@@ -335,4 +333,5 @@ def main():
 
 
 if __name__ == "__main__":
+    logger = src.setup_logger(_LOGFILE)
     main()
