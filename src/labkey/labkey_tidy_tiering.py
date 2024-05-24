@@ -1,19 +1,21 @@
 """Tidy the tiering data, and find the highest tier for each participant."""
 
-# Imports
+import logging
 from pathlib import Path
 
 import pandas as pd
 
-from src import setup_logger
-from src import constants as C
-from src.data.labkey_tidy_exit_questionnaires import tidy_gel_chr_names
+import src
+from src.labkey.labkey_tidy_exit_questionnaires import tidy_gel_chr_names
 
-# Logging
-logger = setup_logger(Path(__file__).stem)
+_LOGFILE = f"data/logs/{Path(__file__).stem}.log"
+_FILE_IN = "data/raw/tiering_data_2023-08-01_09-44-03.tsv"
+_TIERS_CLEAN = "data/interim/labkey_tiering_clean.tsv"
+_TIERS_HIGH = "data/interim/labkey_tiering_highest_tiers.tsv"
+
+logger = logging.getLogger(__name__)
 
 
-# Functions
 def read_tiers(path="../data/tiering_data_2023-08-01_09-44-03.tsv"):
     """Get tiering data."""
 
@@ -96,13 +98,14 @@ def get_max_tiers(df):
 def main():
     """Run as script."""
 
-    tiers = read_tiers(C.LABKEY_TIERING).pipe(tidy_conflicting_tiers)
+    tiers = read_tiers(_FILE_IN).pipe(tidy_conflicting_tiers)
     max_tiers = get_max_tiers(tiers)
 
     logger.info("Writing to output.")
-    tiers.to_csv(C.LABKEY_TIERS_CLEAN, sep="\t", index=False)
-    max_tiers.to_csv(C.LABKEY_TIERS_HIGH, sep="\t", index=False)
+    tiers.to_csv(_TIERS_CLEAN, sep="\t", index=False)
+    max_tiers.to_csv(_TIERS_HIGH, sep="\t", index=False)
 
 
 if __name__ == "__main__":
+    logger = src.setup_logger(_LOGFILE)
     main()

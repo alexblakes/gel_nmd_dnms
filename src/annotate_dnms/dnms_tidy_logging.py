@@ -1,24 +1,19 @@
 """Log summary information for tidied DNMs."""
 
-# Imports
+import logging
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
-from src import setup_logger
-from src import constants as C
+import src
 
-
-# Logging
-logger = setup_logger(Path(__file__).stem)
-
-
-# Module constants
+_LOGFILE = f"data/logs/{Path(__file__).stem}.log"
+_FILE_IN = "data/interim/dnms_38_combined_af_vep_tidy.tsv"
 _NAMES = "chr pos ref alt csq enst cohort id".split()
 
+logger = logging.getLogger(__name__)
 
-# Functions
+
 def read_tidy_dnms(path):
     """Read tidied DNMs."""
 
@@ -28,7 +23,7 @@ def read_tidy_dnms(path):
 def main():
     """Run as script."""
     
-    df = read_tidy_dnms(C.DNMS_VEP_TIDY)
+    df = read_tidy_dnms(_FILE_IN)
 
     logger.info(f"DNMs after tidying: {len(df)}")
     logger.info(f"Unique variants {len(df.drop_duplicates(['chr','pos','ref','alt']))}")
@@ -41,4 +36,5 @@ def main():
 
 
 if __name__ == "__main__":
+    logger = src.setup_logger(_LOGFILE)
     main()

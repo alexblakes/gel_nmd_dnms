@@ -40,9 +40,9 @@ data/interim/dnms_38_combined_af_vep.vcf.gz : data/interim/dnms_38_combined_af.v
 
 # Filter DNMs by allele frequency. Tidy VEP consequences, cohort and participant ID.
 data/interim/dnms_38_combined_af_vep_tidy.tsv : data/interim/dnms_38_combined_af_vep.vcf.gz \
-                                                src/annotate_dnms/filter_and_tidy.sh
+                                                src/annotate_dnms/filter_and_tidy.sh \
+												src/annotate_dnms/dnms_tidy_logging.py
 	source activate bio
 	bash src/annotate_dnms/filter_and_tidy.sh
 	source activate ukb
-
-
+	python3 -m src.annotate_dnms.dnms_tidy_logging

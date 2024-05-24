@@ -1,20 +1,20 @@
 """Annotate DNMs with regional constraint and OMIM data."""
 
-# Imports
+import logging
 from pathlib import Path
 
 import pandas as pd
 
-from src import constants as C
-from src import setup_logger
-from src.data.dnms_tidy_logging import read_tidy_dnms
+import src
+from src.annotate_dnms.dnms_tidy_logging import read_tidy_dnms
 
-
-# Logging
-logger = setup_logger(Path(__file__).stem)
-
-
-# Module constants
+_LOGFILE = f"data/logs/{Path(__file__).stem}.log"
+_DNMS_VEP_TIDY = "data/interim/dnms_38_combined_vep_tidy.tsv"
+_REGIONAL_NONSENSE_CONSTRAINT = "data/uom_csf/regional_nonsense_constraint.tsv"
+_NMD_ANNOTATION = "data/uom_csf/nmd_annotations.tsv"
+_GENE_IDS = "data/uom_csf/gene_ids.tsv"
+_GENEMAP2_SIMPLE = "data/uom_csf/genemap2_simple.tsv"
+_FILE_OUT = "data/interim/dnms_annotated.tsv"
 _USECOLS_REGIONAL_CONSTRAINT = [
     "enst",
     "region",
@@ -28,8 +28,9 @@ _USECOLS_REGIONAL_CONSTRAINT = [
     "fdr_p",
 ]
 
+logger = logging.getLogger(__name__)
 
-# Functions
+
 def get_nonsense_constraint(path):
     """Get regional constraint annotations."""
 
@@ -118,11 +119,11 @@ def get_omim(path, gene_ids_path):
 def main():
     """Run as script."""
 
-    dnms = read_tidy_dnms(C.DNMS_VEP_TIDY)
-    cst = get_nonsense_constraint(C.REGIONAL_NONSENSE_CONSTRAINT)
-    nmd = get_nmd(C.NMD_ANNOTATION)
-    gene_ids = get_genes(C.GENE_IDS)
-    omim = get_omim(C.GENEMAP2_SIMPLE, C.GENE_IDS)
+    dnms = read_tidy_dnms(_DNMS_VEP_TIDY)
+    cst = get_nonsense_constraint(_REGIONAL_NONSENSE_CONSTRAINT)
+    nmd = get_nmd(_NMD_ANNOTATION)
+    gene_ids = get_genes(_GENE_IDS)
+    omim = get_omim(_GENEMAP2_SIMPLE, _GENE_IDS)
 
 
     logger.info(f"OMIM entries after merging gene IDs: {len(omim)}")
@@ -167,10 +168,11 @@ def main():
 
     # Write to output
     logger.info("Writing to output.")
-    df.to_csv(C.DNMS_ANNOTATED, sep="\t", index=False)
+    df.to_csv(_FILE_OUT, sep="\t", index=False)
 
     return df  #! Testing
 
 
 if __name__ == "__main__":
+    logger = src.setup_logger(_LOGFILE)
     main()

@@ -4,20 +4,19 @@ This script merges the annotated DNMs with participant-level clinical data from
 LabKey. The resulting DataFrame is written to output.
 """
 
-# Imports
+import logging
 from pathlib import Path
 
 import pandas as pd
 
-from src import setup_logger
+import src
 from src import constants as C
 
-
-# Logging
-logger = setup_logger(Path(__file__).stem)
-
-
-# Module constants
+_LOGFILE = f"data/logs/{Path(__file__).stem}.log"
+_DE_NOVO_OFFSPRING = "data/interim/gel_dnm_offspring_clean.tsv"
+_DNMS_ANNOTATED = "data/interim/dnms_annotated.tsv"
+_LABKEY_CLINICAL = "data/interim/labkey_participant_clinical.tsv"
+_FILE_OUT = "data/interim/dnms_annotated_clinical.tsv"
 _SPREADSHEET_COLS = [
     "enst",
     "chr",
@@ -50,8 +49,9 @@ _SPREADSHEET_COLS = [
     "hpo",
 ]
 
+logger = logging.getLogger(__name__)
 
-# Functions
+
 def read_offspring_ids(path):
     """Read the offpsring IDs"""
 
@@ -99,9 +99,9 @@ def main():
     """Run the script"""
 
     # Read data sets to memory
-    ids = read_offspring_ids(C.DE_NOVO_OFFSPRING)
-    dnms = pd.read_csv(C.DNMS_ANNOTATED, sep="\t")
-    clinical = pd.read_csv(C.LABKEY_CLINICAL, sep="\t")
+    ids = read_offspring_ids(_DE_NOVO_OFFSPRING)
+    dnms = pd.read_csv(_DNMS_ANNOTATED, sep="\t")
+    clinical = pd.read_csv(_LABKEY_CLINICAL, sep="\t")
 
     # Merge and tidy the data
     df = (
@@ -131,10 +131,11 @@ def main():
 
     # Write to output
     logger.info("Writing to output.")
-    df.to_csv(C.DNMS_ANNOTATED_CLINICAL, sep="\t", index=False)
+    df.to_csv(_FILE_OUT, sep="\t", index=False)
 
     return df  #! Testing
 
 
 if __name__ == "__main__":
+    logger = src.setup_logger(_LOGFILE)
     main()

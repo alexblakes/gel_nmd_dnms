@@ -17,11 +17,11 @@ bcftools view -i 'ac_gnomad <= 1 | ac_gnomad = "."' $FILE_IN \
         1
 ' \
 | awk -v OFS="\t" '
-        {split($7, a, "_"); $8=a[1]; $9=a[length(a)]} ;
-        $8 ~ /[0-9]$/ {$9 = $8; $8="GEL"};
-        {sub(/DDD13k\./, "", $9)};
-        {$1=$1};
-        1
+        $7 ~ /^GDX/ {$8 = "GDX"; split($7, a, "_"); $9 = a[2]};
+        $7 ~ /^DDD/ {$8 = "DDD"; split($7, a, /_|\./); $9 = a[length(a)]};
+        $7 ~ /^RUMC/ {$8 = "RUMC"; split($7, a, "_"); $9 = a[length(a)]};
+        $7 !~ /^[GDX|DDD|RUMC]/ {$8 = "GEL"; split($7, a, "_"); $9 = a[1]};
+        {$1 = $1}; 1
 ' \
 | cut -f 1-6,8- \
 > $FILE_OUT

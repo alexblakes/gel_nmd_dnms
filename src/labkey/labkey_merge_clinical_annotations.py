@@ -1,19 +1,22 @@
-"""Docstring."""
+"""Merge clinical annotations from Labkey."""
 
-# Imports
+import logging
 from pathlib import Path
 
 import pandas as pd
 
-from src import setup_logger
-from src import constants as C
+import src
+
+_LOGFILE = f"data/logs/{Path(__file__).stem}.log"
+_CASE_SOLVED = "data/interim/labkey_exit_questionnaires_case_solved.tsv"
+_HIGH_TIERS = "data/interim/labkey_tiering_highest_tiers.tsv"
+_PHENOTYPES_CLEAN = "data/interim/labkey_phenotypes_clean.tsv"
+_PARTICIPANTS = "data/raw/participant_2023-08-09_12-18-36.tsv"
+_FILE_OUT = "data/interim/labkey_participant_clinical.tsv"
+
+logger = logging.getLogger(__name__)
 
 
-# Logging
-logger = setup_logger(Path(__file__).stem)
-
-
-# Functions
 def read_participant_data(path):
     """Read participant data."""
 
@@ -45,10 +48,10 @@ def read_participant_data(path):
 def main():
     """Run as script."""
 
-    case_solved = pd.read_csv(C.LABKEY_EQ_CASE_SOLVED, sep="\t")
-    max_tiers = pd.read_csv(C.LABKEY_TIERS_HIGH, sep="\t")
-    hpo = pd.read_csv(C.LABKEY_PHENOTYPES_CLEAN, sep="\t")
-    participant = read_participant_data(C.LABKEY_PARTICIPANTS)
+    case_solved = pd.read_csv(_CASE_SOLVED, sep="\t")
+    max_tiers = pd.read_csv(_HIGH_TIERS, sep="\t")
+    hpo = pd.read_csv(_PHENOTYPES_CLEAN, sep="\t")
+    participant = read_participant_data(_PARTICIPANTS)
 
     logger.info("Merging clinical annotations.")
 
@@ -67,10 +70,11 @@ def main():
     )
 
     logger.info("Writing to output.")
-    clinical.to_csv(C.LABKEY_CLINICAL, sep="\t", index=False)
+    clinical.to_csv(_FILE_OUT, sep="\t", index=False)
 
     pass
 
 
 if __name__ == "__main__":
+    logger = src.setup_logger(_LOGFILE)
     main()

@@ -4,20 +4,21 @@ Find unique offspring in the cohort.
 For individuals with both GRCh37 and GRCh38 data, choose GRCh38. 
 """
 
-# Import modules
+import logging
 from pathlib import Path
 
 import pandas as pd
 
-from src import setup_logger
+import src
 from src import constants as C
 
+_LOGFILE = f"data/logs/{Path(__file__).stem}.log"
+_DE_NOVO_COHORT = "data/raw/denovo_cohort_information_2023-05-16_10-07-17.tsv"
+_DE_NOVO_OFFSPRING = "data/interim/gel_dnm_offspring_clean.tsv"
 
-# Logging
-logger = setup_logger(Path(__file__).stem)
+logger = logging.getLogger(__name__)
 
 
-# Functions
 def get_offspring(cohort):
     """Filter for offspring."""
 
@@ -57,14 +58,15 @@ def main():
     """Run as script."""
 
     offspring = (
-        pd.read_csv(C.GEL_DE_NOVO_COHORT, sep="\t")
+        pd.read_csv(_DE_NOVO_COHORT, sep="\t")
         .pipe(get_offspring)
         .pipe(filter_unique_offspring)
     )
 
     logger.info("Writing to output.")
-    offspring.to_csv(C.DE_NOVO_OFFSPRING, sep="\t", index=False)
+    offspring.to_csv(_DE_NOVO_OFFSPRING, sep="\t", index=False)
 
 
 if __name__ == "__main__":
+    logger = src.setup_logger(_LOGFILE)
     main()

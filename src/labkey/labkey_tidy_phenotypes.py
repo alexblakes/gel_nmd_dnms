@@ -1,19 +1,20 @@
 """Aggregate HPO terms per participant."""
 
-# Imports
+import logging
 from pathlib import Path
 
 import pandas as pd
 
-from src import setup_logger
+import src
 from src import constants as C
 
+_LOGFILE = f"data/logs/{Path(__file__).stem}.log"
+_FILE_IN = "data/raw/rare_diseases_participant_phen_2023-08-01_09-40-58.tsv"
+_FILE_OUT = "data/interim/labkey_phenotypes_clean.tsv"
 
-# Logging
-logger = setup_logger(Path(__file__).stem)
+logger = logging.getLogger(__name__)
 
 
-# Functions
 def read_hpo(path):
     """Get HPO terms, which are present in each participant, from LabKey."""
 
@@ -49,11 +50,12 @@ def aggregate_hpo_terms_per_participant(hpo):
 def main():
     """Run as script."""
 
-    hpo = read_hpo(C.LABKEY_PHENOTYPES).pipe(aggregate_hpo_terms_per_participant)
+    hpo = read_hpo(_FILE_IN).pipe(aggregate_hpo_terms_per_participant)
 
     logger.info("Writing to output.")
-    hpo.to_csv(C.LABKEY_PHENOTYPES_CLEAN, sep="\t", index=False)
+    hpo.to_csv(_FILE_OUT, sep="\t", index=False)
 
 
 if __name__ == "__main__":
+    logger = src.setup_logger(_LOGFILE)
     main()
