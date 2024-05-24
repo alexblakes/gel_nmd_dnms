@@ -12,6 +12,7 @@ from src import constants as C
 from src.visualisation import plots
 
 _LOGFILE = f"data/logs/{Path(__file__).stem}.log"
+_FILE_IN = "data/interim/dnms_annotated_clinical.tsv"
 _FIG_OUT = "data/plots/recurrent_dnms"
 
 logger = logging.getLogger(__name__)
@@ -95,7 +96,7 @@ def plot_bars(data, ax=None, legend=False):
 def main():
     """Run as script."""
 
-    df = read_dnm_ptvs(C.DNMS_ANNOTATED_CLINICAL).pipe(combine_dnm_counts)
+    df = read_dnm_ptvs(_FILE_IN).pipe(combine_dnm_counts)
 
     plt.style.use(C.STYLE_DEFAULT)
     plt.style.use(C.COLOR_VIBRANT)

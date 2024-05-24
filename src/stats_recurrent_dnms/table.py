@@ -6,9 +6,9 @@ from pathlib import Path
 import pandas as pd
 
 import src
-from src import constants as C
 
 _LOGFILE = f"data/logs/{Path(__file__).stem}.log"
+_FILE_IN = "data/interim/dnms_annotated_clinical.tsv"
 _FILE_OUT = "data/final/recurrent_dnms.tsv"
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ def read_dnm_ptvs(path):
 def main():
     """Run as script."""
 
-    ptvs = read_dnm_ptvs(C.DNMS_ANNOTATED_CLINICAL)
+    ptvs = read_dnm_ptvs(_FILE_IN)
 
     ptvs.to_csv(_FILE_OUT, sep="\t", index=False)
 
