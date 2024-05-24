@@ -30,7 +30,7 @@ vep \
     --fields "Consequence,Feature,SYMBOL,CANONICAL" \
 | filter_vep \
     --filter "CANONICAL is YES" \
-    --filter "Consequence regex stop_gained|frameshift_variant" \
+    --filter "Consequence regex stop_gained|frameshift_variant|missense|synonymous" \
     --only_matched \
 | bcftools +split-vep \
     --columns - \

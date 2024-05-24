@@ -16,8 +16,11 @@ labkey :
 merge_annotations :
 	make -f src/merge_annotations/Makefile all
 
-recurrent_dnms :
-	make -f src/recurrent_dnms/Makefile all
+stats_recurrent_dnms :
+	make -f src/stats_recurrent_dnms/Makefile all
+
+stats_enrichment :
+	make -f src/stats_enrichment/Makefile all
 
 all : dnms \
       annotate_dnms \

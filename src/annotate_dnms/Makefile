@@ -27,7 +27,6 @@ data/interim/dnms_38_combined_af.vcf.gz : data/interim/dnms_38_combined.vcf.gz \
                                           src/annotate_dnms/annotate_allele_frequencies.sh
 	source activate bio
 	bash src/annotate_dnms/annotate_allele_frequencies.sh
-	source activate ukb
 	# Takes approximately 5 minutes to run
 
 # Annotate DNMs with VEP
@@ -35,7 +34,6 @@ data/interim/dnms_38_combined_af_vep.vcf.gz : data/interim/dnms_38_combined_af.v
                                               src/annotate_dnms/vep.sh
 	source activate bio
 	bash src/annotate_dnms/vep.sh
-	source activate ukb
 	# Takes about 5 minutes to run
 
 # Filter DNMs by allele frequency. Tidy VEP consequences, cohort and participant ID.
