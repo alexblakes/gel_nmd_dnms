@@ -8,7 +8,7 @@ import pandas as pd
 from scipy.stats import contingency
 
 import src
-from src.data import statistics_for_plots
+from src import stats_enrichment
 
 _LOGFILE = f"data/logs/{Path(__file__).stem}.log"
 _FILE_IN = "data/interim/dnms_annotated_clinical.tsv"
@@ -119,7 +119,7 @@ def main():
         )
         .dropna()
         .reset_index()
-        .pipe(statistics_for_plots.sort_region_column)
+        .pipe(stats_enrichment.sort_region_column)
     )
 
     # Write to output

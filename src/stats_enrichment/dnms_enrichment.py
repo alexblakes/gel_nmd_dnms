@@ -12,7 +12,7 @@ from scipy.stats import poisson
 
 import src
 from src.merge_annotations import dnms_annotate_constraint
-from src.data.statistics_for_plots import sort_region_column
+from src import stats_enrichment
 
 _LOGFILE = f"data/logs/{Path(__file__).stem}.log"
 _DNMS_ANNOTATED = "data/interim/dnms_annotated.tsv"
@@ -186,7 +186,7 @@ def tidy_data(df):
         pass
 
     # Convert consequences to a categorical index
-    df = sort_region_column(
+    df = stats_enrichment.sort_region_column(
         df,
         column="csq",
         categories=_DNM_ENRICHMENT_CATEGORIES,
