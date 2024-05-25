@@ -22,17 +22,13 @@ stats_recurrent_dnms :
 stats_enrichment :
 	make -f src/stats_enrichment/Makefile all
 
+stats_odds_ratios : 
+	make -f src/stats_odds_ratios/Makefile all
+
 all : dnms \
       annotate_dnms \
 	  labkey \
 	  merge_annotations \
 	  stats_recurrent_dnms \
 	  stats_enrichment \
-	  data/statistics/case_solved_odds_ratios.tsv \
-
-# Get case solved odds ratios
-data/statistics/case_solved_odds_ratios.tsv : src/data/dnms_case_solved_odds.py \
-                                              data/interim/dnms_annotated_clinical.tsv
-	python3 -m src.data.dnms_case_solved_odds
-
-# Next
+	  stats_odds_ratios \
