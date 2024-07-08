@@ -109,11 +109,9 @@ def main():
     axs[1].set_title("Morbid genes\n(dominant)")
     axs[2].set_title("Morbid genes\n(recessive)")
     axs[3].set_title("Non-morbid genes")
-
-    axs[1].set_xlim(0,16)
-    axs[2].set_xlim(0,6)
-
+  
     for ax in axs:
+        ax.set_xlim(0,11)
         ax.set_xlabel("Fold enrichment")
         
     plt.savefig(_SVG)

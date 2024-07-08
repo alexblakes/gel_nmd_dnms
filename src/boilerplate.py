@@ -6,7 +6,6 @@ from pathlib import Path
 import pandas as pd
 
 import src
-from src import constants as C
 
 _LOGFILE = f"data/logs/{Path(__file__).stem}.log"
 

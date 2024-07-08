@@ -24,6 +24,7 @@ _USECOLS_REGIONAL_CONSTRAINT = [
     "n_obs",
     "n_exp",
     "oe",
+    "oe_ci_hi",
     "p",
     "fdr_p",
 ]

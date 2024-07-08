@@ -34,6 +34,7 @@ _SPREADSHEET_COLS = [
     "n_obs",
     "n_exp",
     "oe",
+    "oe_ci_hi",
     "p",
     "fdr_p",
     "n_trunc_region",
@@ -113,20 +114,20 @@ def main():
     # Logging
     logger.info(f"Starting DNMs: {len(dnms)}")
     logger.info(f"DNMs after merging annotations: {len(df)}")
-    logger.info(f"DNMs in GEL participants: {(df.cohort == 'gel').sum()}")
+    logger.info(f"DNMs in GEL participants: {(df.cohort == 'GEL').sum()}")
     logger.info(f"Unique GEL participants: {df.participant_id.nunique()}")
     logger.info(
         f"GEL participants lacking an ID: "
-        f"{((df.cohort == 'gel') & (df.participant_id.isna())).sum()}"
+        f"{((df.cohort == 'GEL') & (df.participant_id.isna())).sum()}"
     )
     logger.info(
         f"GEL participants with no HPO terms: "
-        f"{df[(df.cohort=='gel') & (df.hpo.isna())].participant_id.nunique()}. "
+        f"{df[(df.cohort=='GEL') & (df.hpo.isna())].participant_id.nunique()}. "
         "These individuals are (presumably unaffected) relatives of a proband."
     )
     logger.info(
         f"DNMs in GEL participants with no HPO terms: "
-        f"{((df.cohort=='gel') & (df.hpo.isna())).sum()}"
+        f"{((df.cohort=='GEL') & (df.hpo.isna())).sum()}"
     )
 
     # Write to output
