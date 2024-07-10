@@ -23,7 +23,9 @@ logger.info(f"Unique IDs in Kaplanis data before liftover: {k37['id'].nunique()}
 logger.info(f"DNMs in Kaplanis data before liftover: {len(k37)}")
 logger.info(f"Unique DNMs in Kaplanis data before liftover (by chrom, pos, ref, alt): {len(k37.drop_duplicates(['chrom','pos','ref','alt']))}")
 
-logger.info(f"Unique IDs in Kaplanis data before liftover: {k38['id'].nunique()}")
-logger.info(f"DNMs in Kaplanis data before liftover: {len(k38)}")
-logger.info(f"Unique DNMs in Kaplanis data before liftover (by chrom, pos, ref, alt): {len(k38.drop_duplicates(['chrom','pos','ref','alt']))}")
+logger.info(f"Unique IDs in Kaplanis data after liftover: {k38['id'].nunique()}")
+logger.info(f"DNMs in Kaplanis data after liftover: {len(k38)}")
+logger.info(f"Unique DNMs in Kaplanis data after liftover (by chrom, pos, ref, alt): {len(k38.drop_duplicates(['chrom','pos','ref','alt']))}")
 
+logger.info(f"DNMs in combined data: {len(combined_38)}")
+logger.info(f"Unique DNMs in combined data (by chrom, pos, ref, alt): {len(combined_38.drop_duplicates(['chrom','pos','ref','alt']))}")

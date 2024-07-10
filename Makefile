@@ -2,7 +2,7 @@ SHELL = bash
 
 .ONESHELL :
 
-.PHONY : all recurrent_dnms
+.PHONY : dnms annotate_dnms labkey merge_annotations stats_recurrent_dnms stats_enrichment stats_odds_ratios all
 
 dnms :
 	make -f src/dnms/Makefile all

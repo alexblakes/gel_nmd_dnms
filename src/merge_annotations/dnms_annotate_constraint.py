@@ -157,7 +157,9 @@ def main():
         f"DNM transcripts missing from constraint data: {(~dnms.enst.isin(cst.enst)).sum()}"
     )
     logger.info(f"DNMs after merging constraint data: {len(df)}")
-    logger.info(f"DNMs with a constraint annotation: {df.n_obs.count()}")
+    logger.info(f"DNMs with a constraint P value: {df.fdr_p.count()}")
+    logger.info(f"DNMs with a constraint annotation: {df.constraint.count()}")
+    logger.info(f"DNMs constraint value counts:\n{df.constraint.value_counts()}")
 
     # Merge OMIM annotations
     df = df.merge(omim, how="left")
