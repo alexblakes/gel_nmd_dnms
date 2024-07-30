@@ -22,7 +22,7 @@ def read_tidy_dnms(path):
 
 def main():
     """Run as script."""
-    
+
     df = read_tidy_dnms(_FILE_IN)
 
     logger.info(f"DNMs after tidying: {len(df)}")

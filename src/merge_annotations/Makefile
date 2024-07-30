@@ -7,7 +7,7 @@ all : data/interim/dnms_annotated.tsv \
       data/interim/dnms_annotated_clinical.tsv \
 
 # Annotate DNMs with constraint and OMIM data
-data/interim/dnms_annotated.tsv : data/interim/dnms_38_combined_af_vep_tidy.tsv \
+data/interim/dnms_annotated.tsv : data/interim/dnms_38_combined_af_vep_tidy_dedup.tsv \
                                   data/uom_csf/regional_nonsense_constraint.tsv \
 								  data/uom_csf/nmd_annotations.tsv \
 								  data/uom_csf/gene_ids.tsv \

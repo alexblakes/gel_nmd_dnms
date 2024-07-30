@@ -10,6 +10,7 @@ all : $(allele_frequencies) \
       data/interim/dnms_38_combined_af.vcf.gz \
 	  data/interim/dnms_38_combined_af_vep.vcf.gz \
 	  data/interim/dnms_38_combined_af_vep_tidy.tsv \
+	  data/interim/dnms_38_combined_af_vep_tidy_dedup.tsv \
 
 # Extract allele frequency data from GEL and gnomAD
 $(allele_frequencies) &: data/interim/dnms_38_combined.vcf.gz \
@@ -44,3 +45,9 @@ data/interim/dnms_38_combined_af_vep_tidy.tsv : data/interim/dnms_38_combined_af
 	bash src/annotate_dnms/filter_and_tidy.sh
 	source activate ukb
 	python3 -m src.annotate_dnms.dnms_tidy_logging
+
+# Drop DDD DNMs in GEL
+data/interim/dnms_38_combined_af_vep_tidy_dedup.tsv : data/interim/dnms_38_combined_af_vep_tidy.tsv \
+                                                      src/annotate_dnms/drop_duplicates_in_kaplanis_and_gel.py
+	source activate ukb
+	python3 -m src.annotate_dnms.drop_duplicates_in_kaplanis_and_gel
