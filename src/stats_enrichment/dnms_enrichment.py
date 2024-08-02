@@ -1,26 +1,17 @@
 """Quantify the enrichment of truncating DNMs in constrained transcripts and regions.
 """
 
-# Imports
 import logging
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.stats import chisquare
-from scipy.stats import poisson
+from scipy import stats
 
 import src
-from src.merge_annotations import dnms_annotate_constraint
 from src import stats_enrichment
 
-_LOGFILE = f"data/logs/{Path(__file__).stem}.log"
-_DNMS_ANNOTATED = "data/interim/dnms_annotated.tsv"
-_REGIONAL_NONSENSE_CONSTRAINT = "data/uom_csf/regional_nonsense_constraint.tsv"
-_REGIONAL_CONSTRAINT_STATS = "data/uom_csf/regional_constraint_stats.tsv"
-_GENE_IDS = "data/uom_csf/gene_ids.tsv"
-_GENEMAP2_SIMPLE = "data/uom_csf/genemap2_simple.tsv"
-_DNM_ENRICHMENT_CATEGORIES = [
+_FILE_IN = "data/interim/dnms_enrichment_counts.tsv"
+_DNM_ENRICHMENT_NAMES = [
     "synonymous_variant",
     "missense_variant",
     "truncating",
@@ -28,9 +19,7 @@ _DNM_ENRICHMENT_CATEGORIES = [
     "start_proximal",
     "long_exon",
     "distal",
-][
-    ::-1
-]  # Reversed
+]
 _DNM_ENRICHMENT_LABELS = [
     "Synonymous",
     "Missense",
@@ -39,182 +28,62 @@ _DNM_ENRICHMENT_LABELS = [
     "Truncating (Start proximal)",
     "Truncating (Long exon)",
     "Truncating (Distal)",
-][
-    ::-1
-]  # Reversed
+]
 _GENE_SET_NAMES = ["all_genes", "morbid_genes", "non_morbid_genes"]
 _GENE_SET_LABELS = ["All genes", "Morbid genes", "Non-morbid genes"]
 
 logger = logging.getLogger(__name__)
 
 
-def read_dnms(path):
-    return pd.read_csv(
-        path, sep="\t", usecols=["csq", "constraint", "inheritance_simple", "region"]
+def read_data(path):
+    return pd.read_csv(path, sep="\t")
+
+
+def count_variants(df, groupby):
+    return df.groupby(groupby, dropna=False).agg(
+        gnomad_exp=("n_exp", "sum"), dnms_obs=("n_dnms", "sum")
     )
 
 
-def unify_truncating_variants(df):
-    """Convert all PTV annotations to "truncating"."""
+def group_levels(obj, drop="constraint"):
+    """Group a dataframe by all levels of a multi-index, except one."""
 
-    df.loc[
-        df["csq"].isin(["stop_gained", "frameshift", "frameshift_variant"]), "csq"
-    ] = "truncating"
-
-    return df
-
-
-def read_nonsense_constraint(path):
-    return pd.read_csv(path, sep="\t", usecols=["enst", "region", "constraint"])
-
-
-def read_constraint_stats(path):
-    return pd.read_csv(path, sep="\t", usecols=["enst", "region", "csq", "n_exp"])
-
-
-def group_levels(obj):
-    """Group a dataframe by levels of a multi-index. (All but the last level)."""
-
-    n_levels = len(obj.index.levels)
-
-    return obj.groupby(level=list(range(n_levels - 1)))
-
-
-def get_expected_proportions(number_expected):
-    """Find the proportion of variants expected in constrained / unconstrained regions."""
-
-    # Absolute number of variants in constrained and unconstrained regions
-    total = group_levels(number_expected).transform("sum")
-
-    # Proportion of variants in constrained / unconstrained regions
-    proportion_expected = (number_expected / total).rename("proportion_expected")
-
-    assert np.allclose(
-        group_levels(proportion_expected).sum(), 1
-    ), "Proportions do not sum to 1."
-
-    return proportion_expected
-
-
-def get_expected_dnms(observed_dnms, number_expected):
-    """Get the expected number of DNMs per group."""
-
-    observed_dnms = observed_dnms.rename("dnms_observed")
-    total_dnms = group_levels(observed_dnms).transform("sum")
-    proportion_expected = get_expected_proportions(number_expected)
-    expected_dnms = (total_dnms * proportion_expected).rename("dnms_expected")
-
-    df = pd.concat([observed_dnms, proportion_expected, expected_dnms], axis=1)
-
-    return df
+    return obj.groupby(level=[i for i in obj.index.names if i != drop])
 
 
 def chi_square_test(df):
-    """Get chi-square statistics for DNMs in constrained and unconstrained regions."""
-
-    chi2 = group_levels(df).apply(
-        lambda x: chisquare(x["dnms_observed"], x["dnms_expected"])
-    )
-    chi2 = pd.DataFrame(chi2.to_list(), columns=["chi2", "p"], index=chi2.index)
-
-    return chi2
-
-
-def relative_enrichment(df):
-    oe = df["dnms_observed"] / df["dnms_expected"]
-
-    return (oe.xs("constrained", level=-1) / oe.xs("unconstrained", level=-1)).rename(
-        "relative_enrichment"
+    return group_levels(df).apply(
+        lambda x: stats.chisquare(x.dnms_obs, x.dnms_exp).pvalue
     )
 
 
-def poisson_ci(df):
-    # Get Poisson confidence interval (normal approximation)
-    ci = poisson(df["dnms_observed"]).interval(0.95)
-    ci = (
-        pd.DataFrame.from_dict(ci)
-        .T.set_index(df.index)
-        .set_axis(["ci_l", "ci_r"], axis=1)
+def get_statistics(df):
+    return df.assign(
+        prop_exp=lambda x: x.gnomad_exp / group_levels(x)["gnomad_exp"].sum(),
+        dnms_exp=lambda x: x.prop_exp * group_levels(x)["dnms_obs"].sum(),
+        oe=lambda x: x.dnms_obs / x.dnms_exp,
+        fc=lambda x: x.oe / x.xs("unconstrained", level="constraint").oe,
+        log2_fc=lambda x: np.log2(x.fc),
+        oe_ci=lambda x: (1.96 * np.sqrt(x.dnms_obs)) / x.dnms_exp,
+        fc_ci=lambda x: x.oe_ci / x.xs("unconstrained", level="constraint").oe,
+        chi2_p=lambda x: chi_square_test(x),
     )
-
-    # Adjust for expected DNMs
-    ci_adj = ci.div(df["dnms_expected"], axis=0)
-
-    # Normalise relative to unconstrained regions
-    ci_adj_constrained = ci_adj.xs("constrained", level=-1)
-
-    oe = df["dnms_observed"] / df["dnms_expected"]
-    oe_unconstrained = oe.xs("unconstrained", level=-1)
-
-    ci_norm = ci_adj_constrained.div(oe_unconstrained, axis=0)
-
-    return ci_norm
-
-
-def unify_index(df, names=["csq"]):
-    """Rename an index, if the number of index levels matches the number of names."""
-    if df.index.nlevels == len(names):
-        df.index = df.index.set_names(names)
-
-    return df
-
-
-def get_enrichment_statistics(df):
-    chi2 = chi_square_test(df)
-    enrichment = relative_enrichment(df)
-    ci = poisson_ci(df)
-
-    return pd.concat([chi2, enrichment, ci], axis=1).pipe(unify_index)
 
 
 def tidy_data(df):
-    df = df.reset_index()
-
-    # Drop the needless "transcript" rows
-    df = df[df["csq"] != "transcript"]
-
-    # Rename the "distal_nmd" consequence label
-    df = df.replace({"distal_nmd": "distal"})
-
-    # Rename the "AD_AR" inheritance label
-    df = df.replace({"AD_AR": "AD/AR"})
-
-    # Capitalise constraint annotations (if they are present)
-    try:
-        df["constraint"] = df["constraint"].str.capitalize()
-    except:
-        pass
-
-    # Convert consequences to a categorical index
-    df = stats_enrichment.sort_region_column(
-        df,
-        column="csq",
-        categories=_DNM_ENRICHMENT_CATEGORIES,
-        labels=_DNM_ENRICHMENT_LABELS,
-    )
-
-    logger.debug(f"{df}")
-
-    return df
+    return df.xs("constrained", level="constraint").loc[:, ["fc", "fc_ci", "chi2_p"]]
 
 
 def main():
     """Run as script."""
 
-    # Load datasets
-    dnms = read_dnms(_DNMS_ANNOTATED).pipe(unify_truncating_variants)
-    nonsense_constraint = read_nonsense_constraint(_REGIONAL_NONSENSE_CONSTRAINT)
-    constraint_stats = read_constraint_stats(_REGIONAL_CONSTRAINT_STATS).pipe(
-        unify_truncating_variants
-    )
-    omim = dnms_annotate_constraint.get_omim(_GENEMAP2_SIMPLE, _GENE_IDS).drop(
-        ["phenotype", "inheritance"], axis=1
-    )
+    df = read_data(_FILE_IN)
 
-    # Merge constraint and OMIM annotations
-    constraint = constraint_stats.merge(
-        nonsense_constraint, validate="many_to_one"
-    ).merge(omim, how="left", validate="many_to_one")
+    return (
+        count_variants(df, ["csq", "region", "inheritance_simple", "constraint"])
+        .pipe(get_statistics)
+        .pipe(tidy_data)
+    )
 
     """ 
     We want to find the number of DNMs (in our trio cohorts), and the expected
@@ -333,5 +202,5 @@ def main():
 
 
 if __name__ == "__main__":
-    logger = src.setup_logger(_LOGFILE)
+    logger = src.setup_logger(src.log_file(__file__))
     main()

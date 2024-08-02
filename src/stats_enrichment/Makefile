@@ -10,8 +10,20 @@ enrichment_stats = data/statistics/dnms_enrichment_all_genes.tsv \
 plots = data/plots/dnm_enrichment_constrained_regions.png \
         data/plots/dnm_enrichment_constrained_regions.svg \
 
-all : $(enrichment_stats) \
+all : data/interim/dnms_enrichment_counts.tsv \
+      $(enrichment_stats) \
       $(plots) \
+
+# Annotate DNMs with OMIM and constraint data
+data/interim/dnms_enrichment_counts.tsv : data/interim/dnms_annotated.tsv \
+                                          data/uom_csf/regional_nonsense_constraint.tsv \
+                                          data/uom_csf/regional_constraint_stats.tsv \
+                                          data/uom_csf/gene_ids.tsv \
+                                          data/uom_csf/genemap2_simple.tsv \
+                                          src/stats_enrichment/merge_annotations.py
+	source activate ukb
+	python3 -m src.stats_enrichment.merge_annotations
+
 
 # Get DNM enrichment statistics
 $(enrichment_stats) &: data/interim/dnms_annotated.tsv \
