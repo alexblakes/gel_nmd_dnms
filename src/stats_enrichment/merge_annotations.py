@@ -85,7 +85,7 @@ def main():
     )
     omim = dac.get_omim(_GENEMAP2_SIMPLE, _GENE_IDS).drop(
         ["phenotype", "inheritance"], axis=1
-    )
+    ).fillna({"inheritance_simple":"non_morbid"})
 
     return (
         dnms.merge(constraint_stats, how="left", validate="m:1")
