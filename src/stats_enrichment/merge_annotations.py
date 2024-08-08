@@ -51,11 +51,9 @@ def unify_truncating_variants(df):
 
 
 def count_dnms(df):
-    return df.assign(
-        n_dnms=lambda x: x.groupby(["enst", "csq", "region"])["region"].transform(
-            "count"
-        )
-    ).drop_duplicates()
+    return (
+        df.groupby(["enst", "region", "csq"]).agg(n_dnms=("csq", "count")).reset_index()
+    )
 
 
 def reorder_data(df):
@@ -72,10 +70,13 @@ def write_out(df, path):
 def main():
     """Run as script."""
 
+    logging.disable()
+
     dnms = (
         read_dnms(_DNMS_ANNOTATED)
         .pipe(unify_truncating_variants)
         .pipe(add_transcript_as_region)
+        .pipe(count_dnms)
     )
     constraint_stats = read_constraint_stats(_REGIONAL_CONSTRAINT_STATS).pipe(
         unify_truncating_variants
@@ -88,11 +89,11 @@ def main():
     )
 
     return (
-        dnms.merge(constraint_stats, how="left", validate="m:1")
-        .merge(nonsense_constraint, how="inner", validate="m:1")
+        dnms.merge(constraint_stats, how="right", validate="m:1")
+        .fillna({"n_dnms": 0})
+        .merge(nonsense_constraint, how="left", validate="m:1")
         .merge(omim, how="left", validate="m:1")
         .fillna({"inheritance_simple": "non_morbid"})
-        .pipe(count_dnms)
         .pipe(reorder_data)
         .pipe(write_out, _FILE_OUT)
     )
