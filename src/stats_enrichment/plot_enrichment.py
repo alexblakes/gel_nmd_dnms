@@ -55,7 +55,7 @@ def horizontal_bars(
         ax = plt.gca()
 
     n = len(values)  # Number of bars
-    height = 1 - (1/n)
+    height = 1 - (1 / n)
     y = np.arange(n)
 
     ax.barh(y=y, width=values, height=height, **kwargs)
@@ -78,7 +78,11 @@ def main():
     morbid_ar = morbid[morbid["inheritance_simple"] == "AR"]
 
     fig, axs = plt.subplots(
-        1, 4, figsize=(18 * C.CM, 4 * C.CM), layout="constrained", sharey=True,
+        1,
+        4,
+        figsize=(18 * C.CM, 4 * C.CM),
+        layout="constrained",
+        sharey=True,
     )
 
     horizontal_bars(
@@ -109,14 +113,14 @@ def main():
     axs[1].set_title("Morbid genes\n(dominant)")
     axs[2].set_title("Morbid genes\n(recessive)")
     axs[3].set_title("Non-morbid genes")
-  
+
     for ax in axs:
-        ax.set_xlim(0,11)
+        ax.set_xlim(0, 11)
         ax.set_xlabel("Fold enrichment")
-        
+
     plt.savefig(_SVG)
     plt.savefig(_PNG, dpi=1000)
-    
+
     pass
 
 

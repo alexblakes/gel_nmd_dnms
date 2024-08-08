@@ -74,16 +74,49 @@ def tidy_data(df):
     return df.xs("constrained", level="constraint").loc[:, ["fc", "fc_ci", "chi2_p"]]
 
 
+def get_csqs_and_regions(df):
+    slices = [
+        ("synonymous_variant", "transcript"),
+        ("missense_variant", "transcript"),
+        ("truncating", "transcript"),
+        ("truncating", "nmd_target"),
+        ("truncating", "start_proximal"),
+        ("truncating", "long_exon"),
+        ("truncating", "distal_nmd"),
+    ]
+
+    return df.loc[slices, :]
+
+
+def write_out(df, path):
+    df.to_csv(path, sep="\t", index=False)
+    return df
+
+
 def main():
     """Run as script."""
 
     df = read_data(_FILE_IN)
 
-    return (
+    genes_by_omim_status = (
         count_variants(df, ["csq", "region", "inheritance_simple", "constraint"])
         .pipe(get_statistics)
         .pipe(tidy_data)
     )
+
+    ad_genes = genes_by_omim_status.xs("AD", level="inheritance_simple").pipe(
+        get_csqs_and_regions
+    )
+    ar_genes = genes_by_omim_status.xs("AR", level="inheritance_simple").pipe(
+        get_csqs_and_regions
+    )
+    non_morbid_genes = genes_by_omim_status.xs(
+        "non_morbid", level="inheritance_simple"
+    ).pipe(get_csqs_and_regions)
+
+    all_genes = count_variants(df, ["csq","region","constraint"]).pipe(get_statistics).pipe(tidy_data).pipe(get_csqs_and_regions)
+
+    return all_genes
 
     """ 
     We want to find the number of DNMs (in our trio cohorts), and the expected

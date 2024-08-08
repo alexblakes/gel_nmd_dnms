@@ -18,9 +18,7 @@ def sort_region_column(df, column="region", **kwargs):
     return df.sort_values(column)
 
 
-def categorical_regions_index(
-    index, categories, labels, name="region"
-):
+def categorical_regions_index(index, categories, labels, name="region"):
     return pd.CategoricalIndex(
         index,
         categories=categories,
