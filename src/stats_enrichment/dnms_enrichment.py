@@ -100,7 +100,7 @@ def get_expected_dnms(observed_dnms, number_expected):
     """Get the expected number of DNMs per group."""
 
     observed_dnms = observed_dnms.rename("dnms_observed")
-    total_dnms = group_levels(observed_dnms).transform("sum")
+    total_dnms = group_levels(observed_dnms).transform("sum") #! DEBUG
     proportion_expected = get_expected_proportions(number_expected)
     expected_dnms = (total_dnms * proportion_expected).rename("dnms_expected")
 
@@ -213,7 +213,7 @@ def main():
 
     # Merge constraint and OMIM annotations
     constraint = constraint_stats.merge(
-        nonsense_constraint, validate="many_to_one"
+        nonsense_constraint, how="inner", validate="many_to_one"
     ).merge(omim, how="left", validate="many_to_one")
 
     """ 
@@ -235,8 +235,8 @@ def main():
     m1 = constraint.inheritance_simple.isna()
     m2 = constraint.csq == "truncating"
 
-    constraint_transcripts = constraint[m0]
-    constraint_transcripts_non_morbid = constraint[m0 & m1]
+    constraint_transcripts = constraint[m0].copy()
+    constraint_transcripts_non_morbid = constraint[m0 & m1].copy()
 
     constraint_truncating = constraint[m2].copy()
     constraint_truncating_non_morbid = constraint[m2 & m1].copy()
