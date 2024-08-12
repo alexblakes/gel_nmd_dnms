@@ -3,12 +3,13 @@
 
 SHELL = bash
 
-enrichment_stats = data/statistics/dnms_enrichment_all_genes.tsv \
-                   data/statistics/dnms_enrichment_morbid_genes.tsv \
-                   data/statistics/dnms_enrichment_non_morbid_genes.tsv \
+enrichment_stats = data/interim/dnms_enrichment_counts_all_genes.tsv \
+                   data/interim/dnms_enrichment_counts_ad.tsv \
+                   data/interim/dnms_enrichment_counts_ar.tsv \
+                   data/interim/dnms_enrichment_counts_non_morbid.tsv
 
-plots = data/plots/dnm_enrichment_constrained_regions.png \
-        data/plots/dnm_enrichment_constrained_regions.svg \
+plots = data/plots/dnm_enrichment.png \
+        data/plots/dnm_enrichment.svg \
 
 all : data/interim/dnms_enrichment_counts.tsv \
       $(enrichment_stats) \
