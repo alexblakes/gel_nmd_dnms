@@ -1,4 +1,4 @@
-"""Boilerplate code for most modules."""
+"""Plot DNV enrichment in different regions and gene sets."""
 
 import logging
 
@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from matplotlib import ticker
 import numpy as np
 import pandas as pd
-import seaborn as sns
 
 import src
 from src import constants as C
@@ -14,6 +13,14 @@ from src import visualisation as vis
 
 _PNG = "data/plots/dnm_enrichment.png"
 _SVG = "data/plots/dnm_enrichment.svg"
+_PATHS = [
+    "data/statistics/dnms_enrichment_all_genes.tsv",
+    "data/statistics/dnms_enrichment_ad.tsv",
+    "data/statistics/dnms_enrichment_ar.tsv",
+    "data/statistics/dnms_enrichment_non_morbid.tsv",
+]
+_TITLES = ["All genes", "OMIM morbid (AD)", "OMIM morbid (AR)", "Non-morbid"]
+
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +53,8 @@ def customise_axes(ax=None, title=None):
     ax.label_outer()
     ax.set_xscale("log", base=2)
     ax.set_xlim(left=0.5)
-    # ax.xaxis.set_major_locator(ticker.SymmetricalLogLocator(base=2, linthresh=0.1))
-    # ax.xaxis.set_major_formatter(ticker.LogFormatterExponent(base=2))
+    ax.xaxis.set_major_locator(ticker.SymmetricalLogLocator(base=2, linthresh=0.1))
+    ax.xaxis.set_major_formatter(ticker.LogFormatterExponent(base=2))
 
     return ax
 
@@ -87,15 +94,7 @@ def main():
     fig, axs = plt.subplots(1, 4, figsize=(18 * C.CM, 4 * C.CM), layout="constrained")
 
     # Create plots
-    paths = [
-        "data/statistics/dnms_enrichment_all_genes.tsv",
-        "data/statistics/dnms_enrichment_ad.tsv",
-        "data/statistics/dnms_enrichment_ar.tsv",
-        "data/statistics/dnms_enrichment_non_morbid.tsv",
-    ]
-    titles = ["All genes", "OMIM morbid (AD)", "OMIM morbid (AR)", "Non-morbid"]
-
-    for path, title, ax in zip(paths, titles, axs):
+    for path, title, ax in zip(_PATHS, _TITLES, axs):
         df = read_data(path).pipe(reverse_data).pipe(normalise_error)
         vis.horizontal_bars(df.fc, ax, xerr=df[["fc_ci_lo", "fc_ci_hi"]].T)
         customise_axes(ax, title)
