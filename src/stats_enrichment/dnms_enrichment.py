@@ -131,13 +131,13 @@ def main():
 
     # Get statistics for all genes
     group_all_genes = ["csq", "region", "constraint"]
-    all_genes = get_dnms_enrichment(df, group_all_genes, bootstrap_samples=1000).pipe(
+    all_genes = get_dnms_enrichment(df, group_all_genes, bootstrap_samples=10000).pipe(
         tidy_index
     )
 
     # Get statistics for genes per OMIM category
     group_omim_genes = ["csq", "region", "inheritance_simple", "constraint"]
-    omim_genes = get_dnms_enrichment(df, group_omim_genes, bootstrap_samples=1000)
+    omim_genes = get_dnms_enrichment(df, group_omim_genes, bootstrap_samples=10000)
     moi = ["AD", "AR", "non_morbid"]
     ad, ar, non_morbid = [separate_omim_categories(omim_genes, m) for m in moi]
 

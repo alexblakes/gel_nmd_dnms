@@ -1,35 +1,10 @@
 """Visualisation tools for regional nonsense constraint paper."""
 
-# Imports
-from collections import namedtuple
-from pathlib import Path
-
 import colorsys
 import matplotlib.colors as mc
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
-
-from src import constants as C
-from src import setup_logger
-
-
-# Functions
-def color_palette(style="default"):
-    """Choose a color palette."""
-
-    if not style in ["default","regions", "enrichment"]:
-        raise ValueError("style must be one of 'default', 'regions', or 'enrichment'.")
-    
-    if style == "default":
-        plt.style.use(C.COLOR_VIBRANT)
-
-    if style == "regions":
-        plt.style.use(C.COLOR_REGIONS)
-
-    if style == "enrichment":
-        plt.style.use(C.COLOR_ENRICHMENT)
-
-    return sns.color_palette().as_hex()
 
 
 def adjust_lightness(color, amount=0.5):
@@ -42,16 +17,60 @@ def adjust_lightness(color, amount=0.5):
     return colorsys.hls_to_rgb(c[0], max(0, min(1, amount * c[1])), c[2])
 
 
+def adjust_alpha(color, alpha):
+    return mc.to_rgba(color, alpha)
+
+
 def panel_label(ax, s, x=-0.05, y=1.05, **kwargs):
+    kwargs.setdefault("fontsize", 8)
+    kwargs.setdefault("fontweight", "bold")
+    kwargs.setdefault("transform", ax.transAxes)
+    kwargs.setdefault("va", "bottom")
+    kwargs.setdefault("ha", "right")
+
     ax.text(
         x,
         y,
         s,
-        transform=ax.transAxes,
-        va="bottom",
-        ha="right",
-        fontsize=8,
-        fontweight="bold",
-        **kwargs,
+        **kwargs
     )
 
+    return ax
+
+
+def vertical_bars(series, ax=None, **kwargs):
+    """Vertical bar chart for values in a series.
+
+    xticklabels are taken from the series' index.
+    """
+
+    kwargs.setdefault("color", sns.color_palette())
+
+    if not ax:
+        ax = plt.gca()
+
+    ax.bar(x=series.index, height=series, **kwargs)
+
+    return ax
+
+
+def horizontal_bars(
+    values,
+    ax=None,
+    **kwargs
+):
+
+    kwargs.setdefault("tick_label", values.index)
+    kwargs.setdefault("color", sns.color_palette())
+    kwargs.setdefault("ecolor", [adjust_lightness(c, 0.8) for c in sns.color_palette()])
+
+    if not ax:
+        ax = plt.gca()
+
+    n = len(values)  # Number of bars
+    height = 1 - (1 / n)
+    y = np.arange(n)
+
+    ax.barh(y=y, width=values, height=height, **kwargs)
+
+    return ax

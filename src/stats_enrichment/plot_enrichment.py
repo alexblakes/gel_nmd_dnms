@@ -1,9 +1,9 @@
-"""Plot relative enrichment of DNMs in constrained regions."""
+"""Boilerplate code for most modules."""
 
 import logging
-from pathlib import Path
 
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -12,123 +12,105 @@ import src
 from src import constants as C
 from src import visualisation as vis
 
-_LOGFILE = f"data/logs/{Path(__file__).stem}.log"
-_ALL_GENES = "data/statistics/dnms_enrichment_all_genes.tsv"
-_MORBID = "data/statistics/dnms_enrichment_morbid_genes.tsv"
-_NON_MORBID = "data/statistics/dnms_enrichment_non_morbid_genes.tsv"
-_SVG = "data/plots/dnm_enrichment_constrained_regions.svg"
-_PNG = "data/plots/dnm_enrichment_constrained_regions.png"
+_PNG = "data/plots/dnm_enrichment.png"
+_SVG = "data/plots/dnm_enrichment.svg"
 
 logger = logging.getLogger(__name__)
 
 
-def read_enrichment_data(path):
-    df = pd.read_csv(
-        path,
-        sep="\t",
-        index_col="csq",
+def read_data(path):
+    return pd.read_csv(path, sep="\t", index_col="csq")
+
+
+def reverse_data(df):
+    return df.iloc[::-1]
+
+
+def normalise_error(df):
+    return df.assign(
+        fc_ci_lo=lambda x: abs(x.fc_ci_lo - x.fc), fc_ci_hi=lambda x: x.fc_ci_hi - x.fc
     )
-    return df
 
 
-def adjust_ci(df):
-    df = df.assign(ci_l=lambda x: abs(x["relative_enrichment"] - x["ci_l"]))
-    df = df.assign(ci_r=lambda x: abs(x["relative_enrichment"] - x["ci_r"]))
-    return df
+def log_transform(df):
+    return df.transform({"fc": np.log2, "fc_ci_lo": np.log2, "fc_ci_hi": np.log2})
 
 
-def parse_data(path):
-    return read_enrichment_data(path).pipe(adjust_ci)
-
-
-def horizontal_bars(
-    values,
-    ax=None,
-    **kwargs,
-):
-
-    kwargs.setdefault("tick_label", values.index)
-    kwargs.setdefault("color", PALETTE)
-    kwargs.setdefault("ecolor", [vis.adjust_lightness(c, 0.8) for c in PALETTE])
-
+def customise_axes(ax=None, title=None):
     if not ax:
-        ax = plt.gca()
+        plt.gca()
 
-    n = len(values)  # Number of bars
-    height = 1 - (1 / n)
-    y = np.arange(n)
+    ax.axvline(1, linestyle="--", color="grey", alpha=0.5)
+    ax.set_title(title)
+    ax.set_xlabel("log2 enrichment")
+    ax.label_outer()
+    ax.set_xscale("log", base=2)
+    ax.set_xlim(left=0.5)
+    # ax.xaxis.set_major_locator(ticker.SymmetricalLogLocator(base=2, linthresh=0.1))
+    # ax.xaxis.set_major_formatter(ticker.LogFormatterExponent(base=2))
 
-    ax.barh(y=y, width=values, height=height, **kwargs)
+    return ax
 
-    ax.axvline(x=1, linestyle="--", color="grey", alpha=0.5)
 
-    return None
+def add_significance_label(ax, df):
+    if not ax:
+        plt.gca()
+
+    alpha = 0.05
+    n_tests = 28
+
+    xs = df.fc + df.fc_ci_hi
+    ys = np.arange(len(df))
+    ps = df.p < (alpha / n_tests)
+
+    for x, y, p in zip(xs, ys, ps):
+        if p:
+            ax.text(x, y, "$\\star$", ha="left", va="center")
+
+    return ax
+
+
+def same_xlims(axs):
+    x_lims = [ax.get_xlim() for ax in axs]
+    x_max = max([x for y in x_lims for x in y])
+    for ax in axs:
+        ax.set_xlim(right=x_max)
+
+    return axs
 
 
 def main():
     """Run as script."""
 
-    # Load data
-    all_genes = parse_data(_ALL_GENES)
-    morbid = parse_data(_MORBID)
-    non_morbid = parse_data(_NON_MORBID)
+    # Instantiate figure
+    plt.style.use([C.STYLE_DEFAULT, C.COLOR_ENRICHMENT])
+    fig, axs = plt.subplots(1, 4, figsize=(18 * C.CM, 4 * C.CM), layout="constrained")
 
-    # # Subset the morbid genes by mode of inheritance
-    morbid_ad = morbid[morbid["inheritance_simple"] == "AD"]
-    morbid_ar = morbid[morbid["inheritance_simple"] == "AR"]
+    # Create plots
+    paths = [
+        "data/statistics/dnms_enrichment_all_genes.tsv",
+        "data/statistics/dnms_enrichment_ad.tsv",
+        "data/statistics/dnms_enrichment_ar.tsv",
+        "data/statistics/dnms_enrichment_non_morbid.tsv",
+    ]
+    titles = ["All genes", "OMIM morbid (AD)", "OMIM morbid (AR)", "Non-morbid"]
 
-    fig, axs = plt.subplots(
-        1,
-        4,
-        figsize=(18 * C.CM, 4 * C.CM),
-        layout="constrained",
-        sharey=True,
-    )
+    for path, title, ax in zip(paths, titles, axs):
+        df = read_data(path).pipe(reverse_data).pipe(normalise_error)
+        vis.horizontal_bars(df.fc, ax, xerr=df[["fc_ci_lo", "fc_ci_hi"]].T)
+        customise_axes(ax, title)
+        add_significance_label(ax, df)
 
-    horizontal_bars(
-        all_genes["relative_enrichment"],
-        axs[0],
-        xerr=[all_genes["ci_l"], all_genes["ci_r"]],
-    )
+    same_xlims(axs)
 
-    horizontal_bars(
-        morbid_ad["relative_enrichment"],
-        axs[1],
-        xerr=[morbid_ad["ci_l"], morbid_ad["ci_r"]],
-    )
-
-    horizontal_bars(
-        morbid_ar["relative_enrichment"],
-        axs[2],
-        xerr=[morbid_ar["ci_l"], morbid_ar["ci_r"]],
-    )
-
-    horizontal_bars(
-        non_morbid["relative_enrichment"],
-        axs[3],
-        xerr=[non_morbid["ci_l"], non_morbid["ci_r"]],
-    )
-
-    axs[0].set_title("All genes")
-    axs[1].set_title("Morbid genes\n(dominant)")
-    axs[2].set_title("Morbid genes\n(recessive)")
-    axs[3].set_title("Non-morbid genes")
-
-    for ax in axs:
-        ax.set_xlim(0, 11)
-        ax.set_xlabel("Fold enrichment")
-
+    # Save figure
+    plt.savefig(_PNG, dpi=600)
     plt.savefig(_SVG)
-    plt.savefig(_PNG, dpi=1000)
+    plt.close("all")
 
-    pass
+    return fig
 
 
 if __name__ == "__main__":
-    logger = src.setup_logger(_LOGFILE)
-
-    plt.style.use(C.STYLE_DEFAULT)
-    plt.style.use(C.COLOR_ENRICHMENT)
-    PALETTE = sns.color_palette()
-
+    logger = src.setup_logger(src.log_file(__file__))
     main()
