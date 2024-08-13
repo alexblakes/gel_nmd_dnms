@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib import ticker
 import numpy as np
 import pandas as pd
+import seaborn as sns
 
 import src
 from src import constants as C
@@ -35,8 +36,18 @@ def reverse_data(df):
 
 def normalise_error(df):
     return df.assign(
-        fc_ci_lo=lambda x: abs(x.fc_ci_lo - x.fc), fc_ci_hi=lambda x: x.fc_ci_hi - x.fc
+        fc_ci_lo=lambda x: abs(x.fc_ci_lo - x.fc), fc_ci_hi=lambda x: x.fc_ci_hi - x.fc, fc_ci_null=0
     )
+
+
+def add_labels(df):
+    sigfig = lambda x: x.round(1).astype(str)
+
+    fc = lambda x: sigfig(x.fc)
+    ci_lo = lambda x: sigfig(x.fc - x.fc_ci_lo)
+    ci_hi = lambda x: sigfig(x.fc + x.fc_ci_hi)
+
+    return df.assign(labels= lambda x: fc(x) + " (" + ci_lo(x) + "-" + ci_hi(x) + ")")
 
 
 def log_transform(df):
@@ -49,12 +60,26 @@ def customise_axes(ax=None, title=None):
 
     ax.axvline(1, linestyle="--", color="grey", alpha=0.5)
     ax.set_title(title)
-    ax.set_xlabel("log2 enrichment")
+    ax.set_xlabel("Fold enrichment")
     ax.label_outer()
-    ax.set_xscale("log", base=2)
-    ax.set_xlim(left=0.5)
-    ax.xaxis.set_major_locator(ticker.SymmetricalLogLocator(base=2, linthresh=0.1))
-    ax.xaxis.set_major_formatter(ticker.LogFormatterExponent(base=2))
+    ax.xaxis.set_major_locator(ticker.MaxNLocator(5))
+
+    # If using a log scale on x
+    # ax.set_xlim(left=0.5)
+    # ax.set_xscale("log", base=2)
+    # ax.xaxis.set_major_locator(ticker.SymmetricalLogLocator(base=2, linthresh=0.1))
+    # ax.xaxis.set_major_formatter(ticker.LogFormatterExponent(base=2))
+
+    return ax
+
+
+def add_bar_labels(df, ax=None):
+    if not ax:
+        ax = plt.gca()
+    
+    labels = df.labels
+    bars = ax.containers[1]
+    ax.bar_label(bars, labels, padding=7, fontsize=5.5)
 
     return ax
 
@@ -66,13 +91,13 @@ def add_significance_label(ax, df):
     alpha = 0.05
     n_tests = 28
 
-    xs = df.fc + df.fc_ci_hi
+    xs = df.fc + df.fc_ci_null
     ys = np.arange(len(df))
     ps = df.p < (alpha / n_tests)
 
     for x, y, p in zip(xs, ys, ps):
         if p:
-            ax.text(x, y, "$\\star$", ha="left", va="center")
+            ax.text(x, y, "$\\star$", ha="left", va="center", fontsize=10)
 
     return ax
 
@@ -95,10 +120,11 @@ def main():
 
     # Create plots
     for path, title, ax in zip(_PATHS, _TITLES, axs):
-        df = read_data(path).pipe(reverse_data).pipe(normalise_error)
-        vis.horizontal_bars(df.fc, ax, xerr=df[["fc_ci_lo", "fc_ci_hi"]].T)
+        df = read_data(path).pipe(reverse_data).pipe(normalise_error).pipe(add_labels)
+        vis.horizontal_bars(df.fc, ax, xerr=df[["fc_ci_lo", "fc_ci_null"]].T)
         customise_axes(ax, title)
         add_significance_label(ax, df)
+        add_bar_labels(df, ax)
 
     same_xlims(axs)
 

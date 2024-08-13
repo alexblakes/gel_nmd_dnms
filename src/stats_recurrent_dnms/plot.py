@@ -56,8 +56,7 @@ def main():
     plt.style.use(C.STYLE_DEFAULT)
     plt.style.use(C.COLOR_REGIONS)
 
-    fig, axs = plt.subplots(
-        2, 3, figsize=(12 * C.CM, 8 * C.CM), layout="constrained")
+    fig, axs = plt.subplots(2, 3, figsize=(12 * C.CM, 8 * C.CM), layout="constrained")
     axs = axs.flatten()
 
     colors = [sns.color_palette()[x] for x in [0, 0, 0, 1, 3, 3]]
