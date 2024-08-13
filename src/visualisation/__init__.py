@@ -44,12 +44,17 @@ def vertical_bars(series, ax=None, **kwargs):
     xticklabels are taken from the series' index.
     """
 
+    kwargs.setdefault("tick_label", series.index)
     kwargs.setdefault("color", sns.color_palette())
+    kwargs.setdefault("ecolor", [adjust_lightness(c, 0.8) for c in sns.color_palette()])
 
     if not ax:
         ax = plt.gca()
 
-    ax.bar(x=series.index, height=series, **kwargs)
+    n_bars = len(series)
+    x = np.arange(n_bars)
+
+    ax.bar(x=x, height=series, **kwargs)
 
     return ax
 
