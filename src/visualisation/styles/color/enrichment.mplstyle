@@ -1,5 +1,5 @@
 # Set color cycle: synonymous, missense, nonsense (whole transcript), nonsense (nmd target), nonsense (start proximal), nonsense (long exon), nonsense (distal)
 # Adapted from the "Sunset" divergent color scheme from Paul Tot's website: https://personal.sron.nl/~pault/
 # Colorblind safe
-axes.prop_cycle : cycler('color', ["DDDDDD", "CCCCCC", "BBBBBB", "B2182B", "98CAE1", "4A7BB7", "293C83"][::-1])
+axes.prop_cycle : cycler('color', ["DDDDDD", "CCCCCC", "BBBBBB", "B2182B", "98CAE1", "4A7BB7", "293C83"])
 

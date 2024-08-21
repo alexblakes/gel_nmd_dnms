@@ -79,3 +79,25 @@ def horizontal_bars(
     ax.barh(y=y, width=values, height=height, **kwargs)
 
     return ax
+
+
+def same_lims(axs, x=False, y=False):
+
+    def min_max_lims(lims):
+        lims_flat = [x for y in lims for x in y]
+        return min(lims_flat), max(lims_flat)
+
+    if x:
+        x_lims = [ax.get_xlim() for ax in axs]
+        x_min, x_max = min_max_lims(x_lims)
+        for ax in axs:
+            ax.set_xlim(left=x_min, right=x_max)
+
+    if y:
+        y_lims = [ax.get_ylim() for ax in axs]
+        y_min, y_max = min_max_lims(y_lims)
+        for ax in axs:
+            ax.set_ylim(bottom=y_min, top=y_max)
+
+
+    return axs
