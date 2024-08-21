@@ -19,15 +19,15 @@ _SLICES = [
     ("truncating", "distal_nmd"),
 ]
 _DNM_ENRICHMENT_LABELS = [
-    "Synonymous",
-    "Missense",
-    "PTV (Whole transcript)",
+    "Synonymous (Full CDS)",
+    "Missense (Full CDS)",
+    "PTV (Full CDS)",
     "PTV (NMD target)",
     "PTV (Start proximal)",
     "PTV (Long exon)",
     "PTV (Distal)",
 ]
-_FILE_OUT = "data/statistics/dnms_enrichment.tsv"
+_FILE_OUT = "data/interim/dnms_enrichment.tsv"
 
 logger = logging.getLogger(__name__)
 

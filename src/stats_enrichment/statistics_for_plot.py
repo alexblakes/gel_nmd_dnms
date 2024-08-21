@@ -7,10 +7,10 @@ import pandas as pd
 import src
 
 _PATHS = [
-    "data/statistics/dnms_enrichment_all_genes.tsv",
-    "data/statistics/dnms_enrichment_ad.tsv",
-    "data/statistics/dnms_enrichment_ar.tsv",
-    "data/statistics/dnms_enrichment_non_morbid.tsv",
+    "data/interim/dnms_enrichment_all_genes.tsv",
+    "data/interim/dnms_enrichment_ad.tsv",
+    "data/interim/dnms_enrichment_ar.tsv",
+    "data/interim/dnms_enrichment_non_morbid.tsv",
 ]
 _OUT_PATHS = [
     "data/statistics/dnms_enrichment_all_genes_tidy.tsv",
