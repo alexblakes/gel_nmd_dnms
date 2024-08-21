@@ -1,16 +1,14 @@
 """Case solved odds ratio statistics."""
 
 import logging
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.stats import contingency
+from statsmodels.stats import contingency_tables as ct
 
 import src
 from src import stats_enrichment
 
-_LOGFILE = f"data/logs/{Path(__file__).stem}.log"
 _FILE_IN = "data/interim/dnms_annotated_clinical.tsv"
 _FILE_OUT = "data/statistics/case_solved_odds_ratios.tsv"
 
@@ -63,16 +61,17 @@ def get_odds_ratio(df, conditions, region, constraint):
     table = pd.DataFrame(index=["solved", "unsolved"], columns=["case", "control"])
     table["case"] = get_solved_count(case)
     table["control"] = get_solved_count(control)
+    table = ct.Table2x2(table)
 
     # Get odds ratio
-    result = contingency.odds_ratio(table)
-    _or = result.statistic
-    ci_lo, ci_hi = result.confidence_interval(0.95)
+    OR = table.oddsratio
+    ci_lo, ci_hi = table.oddsratio_confint()
+    p = table.oddsratio_pvalue()
 
     stats = pd.DataFrame(
         index=[[region], [constraint]],
-        columns=["odds_ratio", "ci_lo", "ci_hi"],
-        data=[[_or, ci_lo, ci_hi]],
+        columns=["odds_ratio", "ci_lo", "ci_hi", "p"],
+        data=[[OR, ci_lo, ci_hi, p]],
     )
     stats.index.set_names(["region", "constraint"], inplace=True)
 
@@ -129,5 +128,5 @@ def main():
 
 
 if __name__ == "__main__":
-    logger = src.setup_logger(_LOGFILE)
+    logger = src.setup_logger(src.log_file(__file__))
     main()
