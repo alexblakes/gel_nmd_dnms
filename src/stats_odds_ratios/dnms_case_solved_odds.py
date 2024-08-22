@@ -12,6 +12,15 @@ from src import stats_enrichment
 
 _FILE_IN = "data/interim/dnms_annotated_clinical.tsv"
 _FILE_OUT = "data/statistics/case_solved_odds_ratios.tsv"
+_OR_LABELS = [
+    "Synonymous (Full CDS)",
+    "Missense (Full CDS)",
+    "PTV (Full CDS)",
+    "PTV (NMD target)",
+    "PTV (Start proximal)",
+    "PTV (Long exon)",
+    "PTV (Distal)",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -81,17 +90,22 @@ def get_odds_ratio(df):
     )
 
 
-def label(df, csq, region, constraint):
-    return df.assign(csq=csq, region=region, constraint=constraint).set_index(["csq","region","constraint"])
+def label(df, **labels):
+    return df.assign(**labels).set_index(list(labels.keys()))
 
 
-def or_pipeline(df, masks, *labels):
+def or_pipeline(df, masks, **labels):
     return (
         df.pipe(get_cases_and_controls, (masks))
         .pipe(count_solved_unsolved)
         .pipe(get_odds_ratio)
-        .pipe(label, *labels)
+        .pipe(label, **labels)
     )
+
+
+def write_out(df, path):
+    df.to_csv(path, sep="\t")
+    return df
 
 
 def main():
@@ -110,25 +124,35 @@ def main():
     start_proximal = df["region"] == "start_proximal"
 
     constraint = [unconstrained, constrained]
-    masks = [synonymous, missense, ptv, ptv & nmd_target, ptv & start_proximal, ptv & long_exon, ptv & distal_nmd]
+    masks = [
+        synonymous,
+        missense,
+        ptv,
+        ptv & nmd_target,
+        ptv & start_proximal,
+        ptv & long_exon,
+        ptv & distal_nmd,
+    ]
     masks = [m & c for m in masks for c in constraint]
 
     # Labels
     csqs = ["synonymous"] * 2 + ["missense"] * 2 + ["ptv"] * 10
-    regions = ["transcript"] * 6 + ["nmd_target"] * 2 + ["start_proximal"] * 2 + ["long_exon"] * 2 + ["distal_nmd"] * 2
+    regions = (
+        ["transcript"] * 6
+        + ["nmd_target"] * 2
+        + ["start_proximal"] * 2
+        + ["long_exon"] * 2
+        + ["distal_nmd"] * 2
+    )
     constraint_levels = ["unconstrained", "constrained"] * 7
-    labels = zip(csqs, regions, constraint_levels)
+    or_labels = [x for y in zip(_OR_LABELS, _OR_LABELS) for x in y]
+    labels = zip(csqs, regions, constraint_levels, or_labels)
+    header = ["csq", "region", "constraint", "label"]
+    label_dicts = [{h: l for h, l in zip(header, _label)} for _label in labels]
 
-    return pd.concat([or_pipeline(df, m, *l) for m, l in zip(masks, labels)])
-
-    #     .reset_index()
-    #     .pipe(stats_enrichment.sort_region_column)
-    # )
-
-    # # Write to output
-    # or_stats.to_csv(_FILE_OUT, sep="\t", index=False)
-
-    # return or_stats  #! Testing
+    return pd.concat(
+        [or_pipeline(df, m, **ld) for m, ld in zip(masks, label_dicts)]
+    ).pipe(write_out, _FILE_OUT)
 
 
 if __name__ == "__main__":
