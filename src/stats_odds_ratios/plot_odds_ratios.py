@@ -98,6 +98,8 @@ def main():
         )
         customise_axes(ax, label, facecolor=color)
 
+    axs[0].add_legend()
+
     plt.savefig(_SVG)
     plt.savefig(_PNG, dpi=600)
     plt.close("all")
