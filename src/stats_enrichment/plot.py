@@ -44,7 +44,7 @@ def customise_axes(ax=None, title=None):
     ax.set_ylim(bottom=0.5)
     ax.set_yscale("log", base=2)
     ax.yaxis.set_major_locator(ticker.SymmetricalLogLocator(base=2, linthresh=0.1))
-    ax.yaxis.set_major_formatter(ticker.ScalarFormatter())
+    ax.yaxis.set_major_formatter(ticker.FormatStrFormatter("%g"))
 
     return ax
 
