@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -33,14 +34,21 @@ def customise_axes(ax=None, label=None, **set_kwargs):
     ax = ax or plt.gca()
 
     ax.set_ylim(-1, 2)
-    ax.tick_params(axis="both", length=0)
     ax.set_yticks(ticks=[np.mean(ax.get_ylim())], labels=label)
+    ax.tick_params(axis="both", length=0)
+    ax.tick_params(axis="y", pad=5)
 
-    ax.axvline(x=1, c="grey", linestyle=":", zorder=-1)
+    ax.xaxis.set_major_locator(ticker.MaxNLocator(min_n_ticks=10))
+
+    ax.axvline(x=1, c="white", linestyle=":", zorder=-1)
+    
     ax.set_xlabel("Odds ratio\n(case solved)")
     ax.label_outer()
+
+    for spine in ax.spines.values():
+        spine.set_edgecolor("white")
     ax.spines["left"].set_visible(False)
-    ax.spines["left"].set_position(("outward", 5))
+    
     ax.set(**set_kwargs)
 
     return ax
@@ -78,7 +86,7 @@ def main():
         x = data["odds_ratio"]
         y = np.arange(len(data))
         label = data["label"].unique()
-        xerr = data[["err_lo", "err_hi"]]
+        xerr = data[["err_lo", "err_hi"]].T
         geom_colors = ["black", "grey"]
 
         h_point_range(

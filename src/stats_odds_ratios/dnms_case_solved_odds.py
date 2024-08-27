@@ -1,14 +1,13 @@
 """Case solved odds ratio statistics."""
 
 import logging
-from tracemalloc import start
 
 import numpy as np
 import pandas as pd
 from statsmodels.stats import contingency_tables as ct
 
 import src
-from src import stats_enrichment
+from src import stats_enrichment as sen
 
 _FILE_IN = "data/interim/dnms_annotated_clinical.tsv"
 _FILE_OUT = "data/statistics/case_solved_odds_ratios.tsv"
@@ -21,6 +20,7 @@ _OR_LABELS = [
     "PTV (Long exon)",
     "PTV (Distal)",
 ]
+_CONSTRAINT_LABEL = {x: x.capitalize() for x in ["constrained", "unconstrained"]}
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +103,16 @@ def or_pipeline(df, masks, **labels):
     )
 
 
+def sort_data(df):
+    return (
+        df.reset_index()
+        .pipe(sen.sort_column, "constraint", _CONSTRAINT_LABEL)
+        .pipe(sen.sort_column, "label", _OR_LABELS)
+        .sort_values(["label", "constraint"])
+        .set_index(["csq", "region", "constraint", "label"])
+    )
+
+
 def write_out(df, path):
     df.to_csv(path, sep="\t")
     return df
@@ -150,9 +160,11 @@ def main():
     header = ["csq", "region", "constraint", "label"]
     label_dicts = [{h: l for h, l in zip(header, _label)} for _label in labels]
 
-    return pd.concat(
-        [or_pipeline(df, m, **ld) for m, ld in zip(masks, label_dicts)]
-    ).pipe(write_out, _FILE_OUT)
+    return (
+        pd.concat([or_pipeline(df, m, **ld) for m, ld in zip(masks, label_dicts)])
+        .pipe(sort_data)
+        .pipe(write_out, _FILE_OUT)
+    )
 
 
 if __name__ == "__main__":
