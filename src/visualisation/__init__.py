@@ -3,6 +3,7 @@
 import colorsys
 import matplotlib.colors as mc
 import matplotlib.pyplot as plt
+from matplotlib import transforms
 import numpy as np
 import seaborn as sns
 
@@ -36,6 +37,26 @@ def panel_label(ax, s, x=-0.05, y=1.05, **kwargs):
     )
 
     return ax
+
+
+def add_significance_asterisk(xs, ys, ps, ax=None, x_adj=0, y_adj=0, **kwargs):
+    kwargs.setdefault("marker", (6,2))
+    kwargs.setdefault("color", "black")
+    kwargs.setdefault("linewidth", 0.5)
+    kwargs.setdefault("zorder", 3)
+    kwargs.setdefault("clip_on", False)
+
+    if not ax:
+        ax = plt.gca()
+
+    trans = (
+        ax.transData +
+        transforms.ScaledTranslation(x_adj/72, y_adj/72, plt.gcf().dpi_scale_trans)
+    )
+
+    for x, y, p in zip(xs, ys, ps):
+        if p:
+            ax.scatter(x, y, transform=trans, **kwargs)
 
 
 def vertical_bars(series, ax=None, **kwargs):
@@ -81,7 +102,7 @@ def horizontal_bars(
     return ax
 
 
-def same_lims(axs, x=False, y=False):
+def same_lims(axs, x=False, y=False, x_adj=0, y_adj=0):
 
     def min_max_lims(lims):
         lims_flat = [x for y in lims for x in y]

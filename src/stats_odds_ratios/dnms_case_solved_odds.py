@@ -103,6 +103,11 @@ def or_pipeline(df, masks, **labels):
     )
 
 
+def bonferroni_correction(df, alpha=0.05):
+    logger.info(f"Bonferroni P value: {alpha / len(df)}")
+    return df.assign(bfr_sig = lambda x: x["p"] < alpha / len(x))
+
+
 def sort_data(df):
     return (
         df.reset_index()
@@ -162,6 +167,7 @@ def main():
 
     return (
         pd.concat([or_pipeline(df, m, **ld) for m, ld in zip(masks, label_dicts)])
+        .pipe(bonferroni_correction)
         .pipe(sort_data)
         .pipe(write_out, _FILE_OUT)
     )

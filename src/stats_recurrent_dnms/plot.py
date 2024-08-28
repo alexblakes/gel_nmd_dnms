@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 import pandas as pd
 import seaborn as sns
 
@@ -19,23 +20,23 @@ _SVG = "data/plots/recurrent_dnms.svg"
 logger = logging.getLogger(__name__)
 
 
-def read_data(path):
+def read_data(path=_FILE_IN):
     return pd.read_csv(path, sep="\t", index_col="n")
 
 
 def customise_axes(ax=None, **set_kwargs):
-    if not ax:
-        ax = plt.gca()
-
-    ax.set(**set_kwargs)
-
+    ax = ax or plt.gca()
+    
     ax.set_yscale("log")
+    ax.yaxis.set_major_formatter(ticker.ScalarFormatter())
     ax.set_xticks(ticks=ax.get_xticks(), labels=["1", "2", "3", "4", "5+"])
 
     # Bar labels
     bars = ax.containers[0]
     ax.bar_label(bars)
 
+    ax.set(**set_kwargs)
+    
     return ax
 
 
@@ -76,7 +77,7 @@ def main():
         vis.vertical_bars(df.loc[:, column], ax, color=color)
         customise_axes(ax, ylabel=ylab, xlabel="$\it{dn}$PTVs", title=title)
 
-    same_ylims(axs)
+    vis.same_lims(axs, y=True)
 
     plt.savefig(_PNG, dpi=600)
     plt.savefig(_SVG)
