@@ -5,36 +5,33 @@ LabKey. The resulting DataFrame is written to output.
 """
 
 import logging
-from pathlib import Path
 
 import pandas as pd
 
 import src
-from src import constants as C
 
-_LOGFILE = f"data/logs/{Path(__file__).stem}.log"
 _DE_NOVO_OFFSPRING = "data/interim/gel_dnm_offspring_clean.tsv"
 _DNMS_ANNOTATED = "data/interim/dnms_annotated.tsv"
 _LABKEY_CLINICAL = "data/interim/labkey_participant_clinical.tsv"
 _FILE_OUT = "data/interim/dnms_annotated_clinical.tsv"
 _SPREADSHEET_COLS = [
+    "symbol",
     "enst",
     "chr",
     "pos",
     "ref",
     "alt",
-    "symbol",
     "phenotype",
     "inheritance",
     "inheritance_simple",
     "region",
     "constraint",
+    "oe_ci_hi",
     "pli",
     "loeuf",
     "n_obs",
     "n_exp",
     "oe",
-    "oe_ci_hi",
     "p",
     "fdr_p",
     "n_trunc_region",
@@ -138,5 +135,5 @@ def main():
 
 
 if __name__ == "__main__":
-    logger = src.setup_logger(_LOGFILE)
+    logger = src.setup_logger(src.log_file(__file__))
     main()
