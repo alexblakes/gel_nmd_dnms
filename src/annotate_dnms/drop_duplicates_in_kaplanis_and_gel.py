@@ -76,5 +76,5 @@ def main():
 
 
 if __name__ == "__main__":
-    logger = src.setup_logger(_LOGFILE)
+    logger = src.setup_logger(src.log_file(__file__))
     main()

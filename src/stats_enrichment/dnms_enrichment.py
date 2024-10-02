@@ -21,11 +21,11 @@ _SLICES = [
 _DNM_ENRICHMENT_LABELS = [
     "Synonymous (Full CDS)",
     "Missense (Full CDS)",
-    "PTV (Full CDS)",
-    "PTV (NMD target)",
-    "PTV (Start proximal)",
-    "PTV (Long exon)",
-    "PTV (Distal)",
+    "Nonsense & FS (Full CDS)",
+    "Nonsense & FS (NMD target)",
+    "Nonsense & FS (Start proximal)",
+    "Nonsense & FS (Long exon)",
+    "Nonsense & FS (Distal)",
 ]
 _FILE_OUT = "data/interim/dnms_enrichment.tsv"
 

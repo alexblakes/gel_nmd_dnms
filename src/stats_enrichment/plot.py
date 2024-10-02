@@ -36,7 +36,8 @@ def customise_axes(ax=None, title=None):
     ax.axhline(1, linestyle="--", color="grey", alpha=0.5)
     ax.set_title(title, pad=7)
     ax.set_ylabel("Fold enrichment")
-    # ax.label_outer()
+    ax.label_outer()
+    ax.tick_params(axis="y", labelleft=True)
     ax.set_xticks(
         ticks=ax.get_xticks(),
         labels=ax.get_xticklabels(),

@@ -14,11 +14,11 @@ _FILE_OUT = "data/statistics/case_solved_odds_ratios.tsv"
 _OR_LABELS = [
     "Synonymous (Full CDS)",
     "Missense (Full CDS)",
-    "PTV (Full CDS)",
-    "PTV (NMD target)",
-    "PTV (Start proximal)",
-    "PTV (Long exon)",
-    "PTV (Distal)",
+    "Nonsense & FS (Full CDS)",
+    "Nonsense & FS (NMD target)",
+    "Nonsense & FS (Start proximal)",
+    "Nonsense & FS (Long exon)",
+    "Nonsense & FS (Distal)",
 ]
 _CONSTRAINT_LABEL = {x: x.capitalize() for x in ["constrained", "unconstrained"]}
 

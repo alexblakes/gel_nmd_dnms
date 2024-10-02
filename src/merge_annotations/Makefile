@@ -24,3 +24,9 @@ data/interim/dnms_annotated_clinical.tsv : data/interim/gel_dnm_offspring_clean.
 										   src/merge_annotations/combine_labkey_and_dnm_data_for_clinical_review.py
 	source activate ukb
 	python3 -m src.merge_annotations.combine_labkey_and_dnm_data_for_clinical_review
+
+# Get candidate genes longlist
+data/final/candidate_genes_longlist.tsv : data/interim/dnms_annotated_clinical.tsv \
+                                          src/merge_annotations/genes_longlist.py
+	source activate ukb
+	python3 -m src.merge_annotations.genes_longlist

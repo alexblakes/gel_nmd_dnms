@@ -3,7 +3,7 @@
 import logging
 from pathlib import Path
 
-import matplotlib
+from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 import numpy as np
@@ -72,6 +72,8 @@ def plot_odds_ratios(
 
 
 def add_legend(ax=None, line2d_kwargs={}, legend_kwargs={}):
+    ax = ax or plt.gca()
+
     line2d_kwargs.setdefault("color", "black")
     line2d_kwargs.setdefault("marker", "o")
     line2d_kwargs.setdefault("markersize", 4)
@@ -79,11 +81,12 @@ def add_legend(ax=None, line2d_kwargs={}, legend_kwargs={}):
     legend_kwargs.setdefault("markerfirst", False)
     legend_kwargs.setdefault("loc", "center right")
 
-    ax = ax or plt.gca()
-
     legend_elements = [plt.Line2D([0], [0], **line2d_kwargs)]
 
-    ax.legend(handles=legend_elements, **legend_kwargs)
+    legend = ax.legend(handles=legend_elements, **legend_kwargs)
+    legend.set_zorder(10)
+
+    ax.add_patch(Rectangle((0.55,0), 0.45, 1, transform=ax.transAxes, alpha=0.5, edgecolor=None, facecolor="white"))
 
     return ax
 
@@ -111,7 +114,7 @@ def plot(axs):
             errorbar_kwargs=dict(xerr=xerr, linestyle="", ecolor=geom_colors),
         )
         customise_axes(ax, ylabel, facecolor=color)
-        vis.add_significance_asterisk(x, y, ps, ax, color="white", s=3)
+        vis.add_significance_asterisk(data["odds_ratio"] + data["err_hi"], y, ps, ax, color="black", x_adj=3)
 
     add_legend(axs[0], line2d_kwargs=dict(label="Unconstrained", color="dimgrey"))
     add_legend(axs[1], line2d_kwargs=dict(label="Constrained", color="black"))
