@@ -3,9 +3,12 @@
 import logging
 from pathlib import Path
 
+from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 import numpy as np
 import pandas as pd
+import seaborn as sns
 
 import src
 from src import constants as C
@@ -19,103 +22,122 @@ _PNG = "data/plots/case_solved_odds_ratios.png"
 logger = logging.getLogger(__name__)
 
 
-def plot_odds_ratios(
-    df,
-    ax,
-    facecolor="white",
-    label=None,
-    xticks=False,
-    legend=False,
-    **kwargs
-):
+def read_data(path=_FILE_IN):
+    return pd.read_csv(path, sep="\t")
 
-    y = np.arange(len(df))[::-1]
-    colors = {
-        "unconstrained": "grey",
-        "constrained": "black",
-    }
 
-    for i, constraint in enumerate(df["constraint"]):
-        ax.errorbar(
-            x=[df.iloc[i]["odds_ratio"]],
-            y=[(len(df) - 1) - i],
-            fmt="o",
-            markersize=4,
-            color=colors[constraint],
-            xerr=(
-                [abs(df.iloc[i]["ci_lo"] - df.iloc[i]["odds_ratio"])],
-                [abs(df.iloc[i]["ci_hi"] - df.iloc[i]["odds_ratio"])],
-            ),
-            label=constraint.capitalize()
-        )
-        
-    if legend:
-        ax.legend(loc="center right",)
+def h_point_range(x, y, ax=None, scatter_kwargs={}, errorbar_kwargs={}):
+    ax = ax or plt.gca()
 
-    ax.axvline(x=1, c="grey", linestyle="--")
+    ax.scatter(x=x, y=y, **scatter_kwargs)
+    ax.errorbar(x=x, y=y, **errorbar_kwargs)
+
+    return ax
+
+
+def customise_axes(ax=None, ylabel=None, **set_kwargs):
+    ax = ax or plt.gca()
+
+    ax.set_ylim(-1, 2)
+    ax.set_yticks(ticks=[np.mean(ax.get_ylim())], labels=ylabel)
+    ax.tick_params(axis="both", length=0)
+    ax.tick_params(axis="y", pad=5)
+
+    ax.xaxis.set_major_locator(ticker.MaxNLocator(min_n_ticks=10))
+
+    ax.axvline(x=1, c="white", linestyle="--", zorder=-1)
 
     ax.set_xlabel("Odds ratio\n(case solved)")
-    ax.set_ylim(y.min() - 1, y.max() + 1)
-    ax.set_xlim(-1, 14)
-    ax.set_yticks(ticks=[y.max()/2], labels=[label])
-    ax.tick_params(axis="y", length=0)
-    # ax.label_outer(remove_inner_ticks=True)
+    ax.label_outer()
 
-    ax.set_facecolor(facecolor)
-    ax.patch.set_alpha(0.3)
-
+    for spine in ax.spines.values():
+        spine.set_edgecolor("white")
     ax.spines["left"].set_visible(False)
-    ax.spines["left"].set_position(("outward", 7))
+
+    ax.set(**set_kwargs)
+
+    return ax
+
+
+def plot_odds_ratios(
+    df, ax, facecolor="white", label=None, xticks=False, legend=False, **kwargs
+):
 
     if not xticks:
         ax.spines["bottom"].set_visible(False)
         ax.tick_params(axis="x", bottom=False)
         ax.set_xlabel(None)
-    
+
     pass
+
+
+def add_legend(ax=None, line2d_kwargs={}, legend_kwargs={}):
+    ax = ax or plt.gca()
+
+    line2d_kwargs.setdefault("color", "black")
+    line2d_kwargs.setdefault("marker", "o")
+    line2d_kwargs.setdefault("markersize", 4)
+
+    legend_kwargs.setdefault("markerfirst", False)
+    legend_kwargs.setdefault("loc", "center right")
+
+    legend_elements = [plt.Line2D([0], [0], **line2d_kwargs)]
+
+    legend = ax.legend(handles=legend_elements, **legend_kwargs)
+    legend.set_zorder(10)
+
+    ax.add_patch(Rectangle((0.55,0), 0.45, 1, transform=ax.transAxes, alpha=0.5, edgecolor=None, facecolor="white"))
+
+    return ax
+
+
+def plot(axs):
+
+    df = read_data()
+
+    data_subsets = [g for _, g in df.groupby("label", sort=False)]
+    bg_colors = [vis.adjust_alpha(c, 0.7) for c in sns.color_palette()]
+
+    for data, ax, color in zip(data_subsets, axs, bg_colors):
+        x = data["odds_ratio"]
+        y = np.arange(len(data))
+        ylabel = data["label"].unique()
+        xerr = data[["err_lo", "err_hi"]].T
+        ps = data["bfr_sig"]
+        geom_colors = ["black", "dimgrey"]
+
+        h_point_range(
+            x,
+            y,
+            ax=ax,
+            scatter_kwargs=dict(color=geom_colors),
+            errorbar_kwargs=dict(xerr=xerr, linestyle="", ecolor=geom_colors),
+        )
+        customise_axes(ax, ylabel, facecolor=color)
+        vis.add_significance_asterisk(data["odds_ratio"] + data["err_hi"], y, ps, ax, color="black", x_adj=3)
+
+    add_legend(axs[0], line2d_kwargs=dict(label="Unconstrained", color="dimgrey"))
+    add_legend(axs[1], line2d_kwargs=dict(label="Constrained", color="black"))
+
+    return axs
+
 
 def main():
     """Run as script."""
 
-    or_stats = pd.read_csv(_FILE_IN, sep="\t")
-    
-    df0 = or_stats[or_stats["region"] == "Whole transcript"]
-    df1 = or_stats[or_stats["region"] == "NMD target"]
-    df2 = or_stats[or_stats["region"] == "Start proximal"]
-    df3 = or_stats[or_stats["region"] == "Long exon"]
-    df4 = or_stats[or_stats["region"] == "Distal"]
-
-    fig, axs = plt.subplots(5, 1, figsize=(7 * C.CM, 4 * C.CM), sharex=True)
+    plt.style.use([C.STYLE_DEFAULT, C.COLOR_ENRICHMENT])
+    fig, axs = plt.subplots(7, 1, figsize=(7 * C.CM, 5 * C.CM), sharex=True)
     plt.subplots_adjust(hspace=0)
 
-    plot_odds_ratios(
-        df0,
-        axs[0],
-        label="Whole transcript",
-        facecolor=_PALETTE[0], legend=True
-    )
-    plot_odds_ratios(
-        df1,
-        axs[1],
-        label="NMD target",
-        facecolor=_PALETTE[1],
-    )
-    plot_odds_ratios(df2, axs[2], label="Start proximal", facecolor=_PALETTE[2])
-    plot_odds_ratios(df3, axs[3], label="Long exon", facecolor=_PALETTE[3])
-    plot_odds_ratios(df4, axs[4], label="Distal", facecolor=_PALETTE[4], xticks=True)
+    plot(axs)
 
     plt.savefig(_SVG)
-    plt.savefig(_PNG, dpi=1000)
+    plt.savefig(_PNG, dpi=600)
+    plt.close("all")
 
-    pass
+    return axs
 
 
 if __name__ == "__main__":
     logger = src.setup_logger(_LOGFILE)
-
-    plt.style.use(C.STYLE_DEFAULT)
-    plt.style.use(C.COLOR_REGIONS)
-
-    _PALETTE = vis.color_palette("regions")
-
     main()

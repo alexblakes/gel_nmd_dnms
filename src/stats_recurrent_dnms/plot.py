@@ -4,119 +4,83 @@ import logging
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
+from matplotlib import ticker
 import pandas as pd
+import seaborn as sns
 
 import src
 from src import constants as C
-from src.visualisation import plots
+from src import visualisation as vis
 
 _LOGFILE = f"data/logs/{Path(__file__).stem}.log"
-_FILE_IN = "data/interim/dnms_annotated_clinical.tsv"
-_FIG_OUT = "data/plots/recurrent_dnms"
+_FILE_IN = "data/statistics/recurrent_dnms.tsv"
+_PNG = "data/plots/recurrent_dnms.png"
+_SVG = "data/plots/recurrent_dnms.svg"
 
 logger = logging.getLogger(__name__)
 
 
-def read_dnm_ptvs(path):
-    return pd.read_csv(
-        path,
-        sep="\t",
-        usecols=[
-            "enst",
-            "chr",
-            "pos",
-            "ref",
-            "alt",
-            "symbol",
-            "omim_inheritance_simple",
-            "region",
-            "constraint",
-            "loeuf",
-            "cohort",
-            "id",
-            "csq",
-        ],
-    ).query("csq == 'frameshift_variant' | csq == 'stop_gained'")
+def read_data(path=_FILE_IN):
+    return pd.read_csv(path, sep="\t", index_col="n")
 
 
-def count_dnms_per_region(df, name, clip=5):
-    """Calculate the number of dnPTVs per region per transcript.
+def customise_axes(ax=None, **set_kwargs):
+    ax = ax or plt.gca()
     
-    For each transcript, we only consider the region with the highest number of dnPTVs.
-    """
+    ax.set_yscale("log")
+    ax.yaxis.set_major_formatter(ticker.ScalarFormatter())
+    ax.set_xticks(ticks=ax.get_xticks(), labels=["1", "2", "3", "4", "5+"])
 
-    counts = (
-        df.groupby(["enst", "region"])["chr"]
-        .count()
-        .groupby("enst")
-        .max()
-        .value_counts()
-        .reset_index()
-        .set_axis(["n", "count"], axis=1)
-    )
-    counts["n"] = counts["n"].clip(upper=clip)
-    counts = counts.groupby("n")["count"].sum().rename(name)
+    # Bar labels
+    bars = ax.containers[0]
+    ax.bar_label(bars)
 
-    return counts
+    ax.set(**set_kwargs)
+    
+    return ax
 
 
-def combine_dnm_counts(ptvs):
-    m1 = ptvs.columns
-    m2 = ptvs.constraint == "constrained"
-    m3 = ~ptvs.omim_inheritance_simple.str.contains("AD|XL").fillna(False)
-    m4 = m2 & m3
+def same_ylims(axs):
+    y_lims = [ax.get_ylim() for ax in axs]
+    y_max = max([x for y in y_lims for x in y])
+    for ax in axs:
+        ax.set_ylim(top=y_max)
 
-    masks = [m1, m2, m3, m4]
-    names = [
-        "All regions",
-        "Constrained regions",
-        "Not OMIM morbid (AD or XL)",
-        "Constrained and not OMIM morbid (AD or XL)",
-    ]
-    zipped = zip(masks, names)
-
-    combined_counts = (
-        pd.concat([count_dnms_per_region(ptvs[m], n) for m, n in zipped], axis=1)
-        .melt(ignore_index=False, var_name="mask", value_name="count")
-        .set_index("mask", append=True)
-        .swaplevel(0, 1)
-    )
-
-    return combined_counts
-
-
-def plot_bars(data, ax=None, legend=False):
-    if not ax:
-        ax = plt.gca()
-
-        return None
+    return axs
 
 
 def main():
     """Run as script."""
 
-    df = read_dnm_ptvs(_FILE_IN).pipe(combine_dnm_counts)
+    df = read_data(_FILE_IN)
 
     plt.style.use(C.STYLE_DEFAULT)
-    plt.style.use(C.COLOR_VIBRANT)
+    plt.style.use(C.COLOR_REGIONS)
 
-    fig, ax = plt.subplots(1, 1, figsize=(12 * C.CM, 4 * C.CM), layout="constrained")
+    fig, axs = plt.subplots(2, 3, figsize=(12 * C.CM, 8 * C.CM), layout="constrained")
+    axs = axs.flatten()
 
-    plots.grouped_bars(df)
-    plots.annotate_grouped_bars(
-        legend=list(df.index.get_level_values(0).unique()),
-        legend_kwargs=dict(bbox_to_anchor=(1, 1.05), borderpad=0),
-        set_kwargs=dict(
-            xticklabels=[1, 2, 3, 4, "5+"],
-            xlabel="$\it{De\ novo}$ PTV count",
-            ylabel="Number of transcripts",
-            yscale="log",
-        ),
-    )
+    colors = [sns.color_palette()[x] for x in [0, 0, 0, 1, 3, 3]]
 
-    plt.savefig(f"{_FIG_OUT}.png", dpi=600)
-    plt.savefig(f"{_FIG_OUT}.svg")
+    ylabs = ["Regions", None, None, "Transcripts", None, None]
+
+    titles = [
+        "Any region",
+        "Constrained region in any gene",
+        "Constrained region\nin a non-morbid gene",
+        "Constrained NMD-target region\nin a non-morbid gene",
+        "Across any constrained\nNMD-escape region\nin a non-morbid gene",
+        "Within one constrained\nNMD-escape region\nin a non-morbid gene",
+    ]
+
+    for ax, column, ylab, title, color in zip(axs, df.columns, ylabs, titles, colors):
+        vis.vertical_bars(df.loc[:, column], ax, color=color)
+        customise_axes(ax, ylabel=ylab, xlabel="$\it{dn}$PTVs", title=title)
+
+    vis.same_lims(axs, y=True)
+
+    plt.savefig(_PNG, dpi=600)
+    plt.savefig(_SVG)
     plt.close("all")
 
     return df

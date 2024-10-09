@@ -1,38 +1,49 @@
 """Case solved odds ratio statistics."""
 
 import logging
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.stats import contingency
+from statsmodels.stats import contingency_tables as ct
 
 import src
-from src import stats_enrichment
+from src import stats_enrichment as sen
 
-_LOGFILE = f"data/logs/{Path(__file__).stem}.log"
 _FILE_IN = "data/interim/dnms_annotated_clinical.tsv"
 _FILE_OUT = "data/statistics/case_solved_odds_ratios.tsv"
+_OR_LABELS = [
+    "Synonymous (Full CDS)",
+    "Missense (Full CDS)",
+    "Nonsense & FS (Full CDS)",
+    "Nonsense & FS (NMD target)",
+    "Nonsense & FS (Start proximal)",
+    "Nonsense & FS (Long exon)",
+    "Nonsense & FS (Distal)",
+]
+_CONSTRAINT_LABEL = {x: x.capitalize() for x in ["constrained", "unconstrained"]}
 
 logger = logging.getLogger(__name__)
 
 
-def get_dnms(path):
-    df = (
-        pd.read_csv(
-            path,
-            sep="\t",
-            usecols=[
-                "participant_id",
-                "omim_inheritance_simple",
-                "region",
-                "constraint",
-                "cohort",
-                "csq",
-                "case_solved",
-            ],
-        )
-        .query("cohort=='GEL'")
+def read_data(path):
+    return pd.read_csv(
+        path,
+        sep="\t",
+        usecols=[
+            "participant_id",
+            "omim_inheritance_simple",
+            "region",
+            "constraint",
+            "cohort",
+            "csq",
+            "case_solved",
+        ],
+    )
+
+
+def tidy_data(df):
+    return (
+        df.query("cohort=='GEL'")
         .drop("cohort", axis=1)
         .fillna({"omim_inheritance_simple": ""})
         .assign(
@@ -42,92 +53,126 @@ def get_dnms(path):
         )
     )
 
+
+def get_cases_and_controls(df, masks):
+    cases = df[masks].drop_duplicates("participant_id").assign(cohort="case")
+    cases_ids = cases["participant_id"]
+    controls = (
+        df[~df["participant_id"].isin(cases_ids)]
+        .drop_duplicates("participant_id")
+        .assign(cohort="control")
+    )
+
+    return pd.concat([cases, controls])
+
+
+def count_solved_unsolved(df):
+    return (
+        df.groupby("cohort")
+        .agg(
+            solved=("case_solved", "sum"),
+            unsolved=("case_solved", lambda x: x.count() - x.sum()),
+        )
+        .T
+    )
+
+
+def get_odds_ratio(df):
+    table = ct.Table2x2(np.array(df))
+    _or = table.oddsratio
+    ci_lo, ci_hi = table.oddsratio_confint()
+    err_lo = _or - ci_lo
+    err_hi = ci_hi - _or
+    p = table.oddsratio_pvalue()
+
+    return pd.DataFrame(
+        columns=["odds_ratio", "err_lo", "err_hi", "p"], data=[[_or, err_lo, err_hi, p]]
+    )
+
+
+def label(df, **labels):
+    return df.assign(**labels).set_index(list(labels.keys()))
+
+
+def or_pipeline(df, masks, **labels):
+    return (
+        df.pipe(get_cases_and_controls, (masks))
+        .pipe(count_solved_unsolved)
+        .pipe(get_odds_ratio)
+        .pipe(label, **labels)
+    )
+
+
+def bonferroni_correction(df, alpha=0.05):
+    logger.info(f"Bonferroni P value: {alpha / len(df)}")
+    return df.assign(bfr_sig = lambda x: x["p"] < alpha / len(x))
+
+
+def sort_data(df):
+    return (
+        df.reset_index()
+        .pipe(sen.sort_column, "constraint", _CONSTRAINT_LABEL)
+        .pipe(sen.sort_column, "label", _OR_LABELS)
+        .sort_values(["label", "constraint"])
+        .set_index(["csq", "region", "constraint", "label"])
+    )
+
+
+def write_out(df, path):
+    df.to_csv(path, sep="\t")
     return df
 
 
-def get_solved_count(df):
-    solved = df["case_solved"].sum()
-    unsolved = df["case_solved"].count() - solved
-    return solved, unsolved
-
-
-def get_odds_ratio(df, conditions, region, constraint):
-    # Get cases
-    case = df[conditions].drop_duplicates("participant_id")
-
-    # Get controls
-    case_ids = case["participant_id"]
-    control = df[~df["participant_id"].isin(case_ids)].drop_duplicates("participant_id")
-
-    # Create a contingency table
-    table = pd.DataFrame(index=["solved", "unsolved"], columns=["case", "control"])
-    table["case"] = get_solved_count(case)
-    table["control"] = get_solved_count(control)
-
-    # Get odds ratio
-    result = contingency.odds_ratio(table)
-    _or = result.statistic
-    ci_lo, ci_hi = result.confidence_interval(0.95)
-
-    stats = pd.DataFrame(
-        index=[[region], [constraint]],
-        columns=["odds_ratio", "ci_lo", "ci_hi"],
-        data=[[_or, ci_lo, ci_hi]],
-    )
-    stats.index.set_names(["region", "constraint"], inplace=True)
-
-    return stats
-
-
 def main():
-    df = get_dnms(_FILE_IN)
+
+    df = read_data(_FILE_IN).pipe(tidy_data)
 
     # Masks
-    ## Consequences
-    m1 = df["csq"].isin(["frameshift_variant", "stop_gained"])
+    synonymous = df["csq"] == "synonymous_variant"
+    missense = df["csq"] == "missense_variant"
+    ptv = df["csq"].isin(["frameshift_variant", "stop_gained"])
+    unconstrained = df["constraint"] == "unconstrained"
+    constrained = df["constraint"] == "constrained"
+    nmd_target = df["region"] == "nmd_target"
+    long_exon = df["region"] == "long_exon"
+    distal_nmd = df["region"] == "distal_nmd"
+    start_proximal = df["region"] == "start_proximal"
 
-    ## Constraint
-    m2 = df["constraint"] == "unconstrained"
-    m3 = df["constraint"] == "constrained"
+    constraint = [unconstrained, constrained]
+    masks = [
+        synonymous,
+        missense,
+        ptv,
+        ptv & nmd_target,
+        ptv & start_proximal,
+        ptv & long_exon,
+        ptv & distal_nmd,
+    ]
+    masks = [m & c for m in masks for c in constraint]
 
-    ## NMD region
-    m4 = df["region"] == "nmd_target"
-    m5 = df["region"] == "long_exon"
-    m6 = df["region"] == "distal_nmd"
-    m7 = df["region"] == "start_proximal"
-
-    # Get the odds of case solved for each group
-    or_stats = (
-        pd.concat(
-            [
-                # get_odds_ratio(df, (m1), "whole_transcript", "all"),
-                get_odds_ratio(df, (m1 & m2), "whole_transcript", "unconstrained"),
-                get_odds_ratio(df, (m1 & m3), "whole_transcript", "constrained"),
-                # get_odds_ratio(df, (m1 & m4), "nmd_target", "all"),
-                get_odds_ratio(df, (m1 & m4 & m2), "nmd_target", "unconstrained"),
-                get_odds_ratio(df, (m1 & m4 & m3), "nmd_target", "constrained"),
-                # get_odds_ratio(df, (m1 & m5), "long_exon", "all"),
-                get_odds_ratio(df, (m1 & m5 & m2), "long_exon", "unconstrained"),
-                get_odds_ratio(df, (m1 & m5 & m3), "long_exon", "constrained"),
-                # get_odds_ratio(df, (m1 & m6), "distal", "all"),
-                get_odds_ratio(df, (m1 & m6 & m2), "distal", "unconstrained"),
-                get_odds_ratio(df, (m1 & m6 & m3), "distal", "constrained"),
-                # get_odds_ratio(df, (m1 & m7),"start_proximal", "all"),
-                get_odds_ratio(df, (m1 & m7 & m2), "start_proximal", "unconstrained"),
-                get_odds_ratio(df, (m1 & m7 & m3), "start_proximal", "constrained"),
-            ]
-        )
-        .dropna()
-        .reset_index()
-        .pipe(stats_enrichment.sort_region_column)
+    # Labels
+    csqs = ["synonymous"] * 2 + ["missense"] * 2 + ["ptv"] * 10
+    regions = (
+        ["transcript"] * 6
+        + ["nmd_target"] * 2
+        + ["start_proximal"] * 2
+        + ["long_exon"] * 2
+        + ["distal_nmd"] * 2
     )
+    constraint_levels = ["unconstrained", "constrained"] * 7
+    or_labels = [x for y in zip(_OR_LABELS, _OR_LABELS) for x in y]
+    labels = zip(csqs, regions, constraint_levels, or_labels)
+    header = ["csq", "region", "constraint", "label"]
+    label_dicts = [{h: l for h, l in zip(header, _label)} for _label in labels]
 
-    # Write to output
-    or_stats.to_csv(_FILE_OUT, sep="\t", index=False)
-
-    return or_stats  #! Testing
+    return (
+        pd.concat([or_pipeline(df, m, **ld) for m, ld in zip(masks, label_dicts)])
+        .pipe(bonferroni_correction)
+        .pipe(sort_data)
+        .pipe(write_out, _FILE_OUT)
+    )
 
 
 if __name__ == "__main__":
-    logger = src.setup_logger(_LOGFILE)
+    logger = src.setup_logger(src.log_file(__file__))
     main()
