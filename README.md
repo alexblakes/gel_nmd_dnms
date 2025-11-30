@@ -11,6 +11,6 @@ Our analysis of *de novo* variation was performed in trio sequencing data from t
 
 Data from the 100KGP and the GMS was accessed through the [National Genomic Research Library](https://www.genomicsengland.co.uk/blog/genomics-101-what-is-the-national-genomic-research-library). Access to the NGRL is available to registered academics with approved projects, as described [here](https://www.genomicsengland.co.uk/join-us).
 
-The repo containing the most up to data version of this analysis is currently awaiting approval for export by Genomics England. This repo will be updated upon approval being granted. Last checked 26/11/25.
+The repo containing the most up to data version of this analysis is currently awaiting approval for export by Genomics England. This repo will be updated upon approval being granted. Last checked 30/11/25.
 
 See also the [main repository here](https://github.com/alexblakes/regional_nonsense_constraint).
