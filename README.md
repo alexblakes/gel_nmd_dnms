@@ -14,6 +14,9 @@ Data from the 100KGP and the GMS was accessed through the [National Genomic Rese
 ## Workflow
 The repo containing the most up to data version of this analysis is currently awaiting approval for export by Genomics England. This repo will be updated upon approval being granted. Last checked 30/11/25.
 
+### Update 09/12/2025
+Export of the analysis workflow from the Genomics England secure research environment is being prevented by an error in the "Airlock" export application. Genomics England are aware of this error and working to rectify it.
+
 The newer version of this repository is described by a Make workflow. This README will be updated to describe this workflow once the export has been approved. 
 
 ## Companion repository
